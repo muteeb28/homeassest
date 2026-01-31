@@ -51,19 +51,38 @@ const attachIdFromKey = (project, key, prefix) => {
   return derivedId ? { ...project, id: derivedId } : project;
 };
 
-const hydrateProject = async (puterContext, project, pathKey) => {
+const hydrateProject = async (puterContext, project) => {
   if (!project || !puterContext) return project;
-  const resolvedPath = project?.[pathKey];
-  if (!resolvedPath) return project;
-  try {
-    const url = await puterContext.fs.getReadURL(
-      resolvedPath,
-      60 * 60 * 24 * 30,
+
+  const updates = {};
+  const tasks = [];
+
+  if (project?.renderedPath) {
+    tasks.push(
+      puterContext.fs
+        .getReadURL(project.renderedPath, 60 * 60 * 24 * 30)
+        .then((url) => {
+          updates.renderedImage = url;
+        })
+        .catch(() => {}),
     );
-    return { ...project, renderedImage: url };
-  } catch {
-    return project;
   }
+
+  if (project?.sourcePath) {
+    tasks.push(
+      puterContext.fs
+        .getReadURL(project.sourcePath, 60 * 60 * 24 * 30)
+        .then((url) => {
+          updates.sourceImage = url;
+        })
+        .catch(() => {}),
+    );
+  }
+
+  if (tasks.length === 0) return project;
+
+  await Promise.all(tasks);
+  return { ...project, ...updates };
 };
 
 const listProjects = async (userParam) => {
@@ -83,7 +102,7 @@ const listProjects = async (userParam) => {
 
   const projects = items.filter(Boolean);
   const hydrated = await Promise.all(
-    projects.map((project) => hydrateProject(userPuter, project, "renderedPath")),
+    projects.map((project) => hydrateProject(userPuter, project)),
   );
 
   hydrated.sort((a, b) => (b?.timestamp || 0) - (a?.timestamp || 0));
@@ -107,7 +126,12 @@ const listPublicProjects = async (meParam) => {
 
   const projects = items.filter(Boolean);
   const hydrated = await Promise.all(
-    projects.map((project) => hydrateProject(mePuter, project, "publicPath")),
+    projects.map((project) =>
+      hydrateProject(mePuter, {
+        ...project,
+        renderedPath: project.publicPath,
+      }),
+    ),
   );
   hydrated.sort((a, b) => (b?.timestamp || 0) - (a?.timestamp || 0));
   return hydrated;
@@ -175,7 +199,10 @@ router.get("/api/projects/get", async ({ request, user, me }) => {
         headers: { "Content-Type": "application/json" },
       });
     }
-    const hydrated = await hydrateProject(mePuter, project, "publicPath");
+    const hydrated = await hydrateProject(mePuter, {
+      ...project,
+      renderedPath: project.publicPath,
+    });
     return { project: hydrated };
   }
 
@@ -199,7 +226,7 @@ router.get("/api/projects/get", async ({ request, user, me }) => {
       headers: { "Content-Type": "application/json" },
     });
   }
-  const hydrated = await hydrateProject(userPuter, project, "renderedPath");
+  const hydrated = await hydrateProject(userPuter, project);
   return { project: hydrated };
 });
 

@@ -112,7 +112,7 @@ const Visualizer: React.FC<VisualizerProps> = ({
             : `roomify/renders/${Date.now()}.png`;
           await puter.fs.write(fileName, blob);
           storedPath = fileName;
-          newImageUrl = await puter.fs.getReadURL(fileName, 60 * 60 * 24 * 30);
+          newImageUrl = await puter.fs.getReadURL(fileName);
         } catch (error) {
           console.error("Failed to store image in Puter FS:", error);
           newImageUrl = rawImageUrl;

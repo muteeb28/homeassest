@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Upload as UploadIcon, FileText, CheckCircle2, ArrowUp, Image as ImageIcon } from 'lucide-react';
+import { Upload as UploadIcon, CheckCircle2, Image as ImageIcon } from 'lucide-react';
 import { puter } from "@heyputer/puter.js";
 
 const Upload: React.FC<UploadProps> = ({ onComplete, className = '' }) => {

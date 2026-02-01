@@ -41,7 +41,7 @@ const Landing: React.FC<LandingProps> = ({
         return;
       }
       try {
-        const user = await puter.auth.getUser();
+        const user = await puter.auth.whoami();
         setUserName(user?.username || null);
       } catch {
         setUserName(null);

@@ -124,10 +124,7 @@ export default function Root() {
           const sourceBlob = await (await fetch(sourceImage)).blob();
           sourcePath = sourcePath || `roomify/sources/${item.id}.png`;
           await puter.fs.write(sourcePath, sourceBlob);
-          sourceImage = await puter.fs.getReadURL(
-            sourcePath,
-            60 * 60 * 24 * 30,
-          );
+          sourceImage = await puter.fs.getReadURL(sourcePath);
         } catch (error) {
           console.warn("Failed to store source image in Puter FS:", error);
         }

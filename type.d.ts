@@ -16,6 +16,8 @@ declare global {
     renderedImage?: string | null;
     renderedPath?: string | null;
     timestamp: number;
+    sharedBy?: string | null;
+    sharedAt?: string | null;
   }
 
   interface DesignConfig {
@@ -74,6 +76,8 @@ declare global {
     projectName?: string;
     projectId?: string;
     initialRender?: string | null;
+    isPublic?: boolean;
+    sharedBy?: string | null;
   }
 
   interface LandingProps {

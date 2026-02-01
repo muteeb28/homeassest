@@ -284,6 +284,11 @@ router.post("/api/projects/save", async ({ request, user, me }) => {
       );
     }
 
+    const sharedBy =
+      user?.puter?.user?.username ||
+      user?.puter?.user?.name ||
+      user?.puter?.user?.email ||
+      null;
     const publicKey = `${PUBLIC_PREFIX}${project.id}`;
 
     let publicPath = null;
@@ -305,6 +310,7 @@ router.post("/api/projects/save", async ({ request, user, me }) => {
       ...payload,
       publicPath,
       renderedImage: publicUrl || payload.renderedImage,
+      sharedBy,
       sharedAt: new Date().toISOString(),
     });
   }

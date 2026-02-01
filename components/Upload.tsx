@@ -1,11 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import { Upload as UploadIcon, FileText, CheckCircle2, ArrowUp, Image as ImageIcon } from 'lucide-react';
+import { puter } from "@heyputer/puter.js";
 
 const Upload: React.FC<UploadProps> = ({ onComplete, className = '' }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [progress, setProgress] = useState(0);
   const [base64Data, setBase64Data] = useState<string | null>(null);
+  const [authMessage, setAuthMessage] = useState<string | null>(null);
+
+  const ensureSignedIn = async () => {
+    try {
+      const signedIn = await puter.auth.isSignedIn();
+      if (signedIn) return true;
+      setAuthMessage("Please sign in with Puter to upload a floor plan.");
+      await puter.auth.signIn();
+      const nowSignedIn = await puter.auth.isSignedIn();
+      if (!nowSignedIn) {
+        setAuthMessage("Sign-in required to continue.");
+      } else {
+        setAuthMessage(null);
+      }
+      return nowSignedIn;
+    } catch (error) {
+      console.error("Puter auth failed:", error);
+      setAuthMessage("Sign-in required to continue.");
+      return false;
+    }
+  };
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -16,15 +38,22 @@ const Upload: React.FC<UploadProps> = ({ onComplete, className = '' }) => {
     setIsDragging(false);
   };
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
+    const canUpload = await ensureSignedIn();
+    if (!canUpload) return;
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       processFile(e.dataTransfer.files[0]);
     }
   };
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const canUpload = await ensureSignedIn();
+    if (!canUpload) {
+      e.currentTarget.value = "";
+      return;
+    }
     if (e.target.files && e.target.files[0]) {
       processFile(e.target.files[0]);
     }
@@ -92,6 +121,9 @@ const Upload: React.FC<UploadProps> = ({ onComplete, className = '' }) => {
                 </div>
                 <p className="text-zinc-900 font-bold text-sm mb-1">Click to upload or drag and drop</p>
                 <p className="text-zinc-500 text-xs">Maximum file size 50 MB.</p>
+                {authMessage && (
+                  <p className="text-red-500 text-xs mt-2">{authMessage}</p>
+                )}
             </div>
           </div>
         ) : (

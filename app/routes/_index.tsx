@@ -1,6 +1,7 @@
 import React from "react";
 import { useNavigate, useOutletContext } from "react-router";
 import Landing from "../../components/Landing";
+import { puter } from "@heyputer/puter.js";
 
 export default function IndexRoute() {
   const navigate = useNavigate();
@@ -17,7 +18,13 @@ export default function IndexRoute() {
     handleSignIn,
   } = useOutletContext<AppContext>();
 
-  const handleUploadComplete = (base64Image: string) => {
+  const handleUploadComplete = async (base64Image: string) => {
+    const signedIn = await puter.auth.isSignedIn();
+    if (!signedIn) {
+      await puter.auth.signIn();
+      const nowSignedIn = await puter.auth.isSignedIn();
+      if (!nowSignedIn) return;
+    }
     const newId = Date.now().toString();
     const newItem = {
       id: newId,

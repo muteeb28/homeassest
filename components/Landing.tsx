@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ArrowRight,
   Clock,
@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { Button } from "./ui/Button";
 import Upload from "./Upload";
+import { puter } from "@heyputer/puter.js";
 
 const Landing: React.FC<LandingProps> = ({
   onStart,
@@ -22,12 +23,61 @@ const Landing: React.FC<LandingProps> = ({
   isLoadingPublic,
 }) => {
   const uploadRef = useRef<HTMLDivElement>(null);
+  const [isSignedIn, setIsSignedIn] = useState(false);
+  const [userName, setUserName] = useState<string | null>(null);
 
   const scrollToUpload = () => {
     uploadRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   const hasHistory = history.length > 0;
+
+  const refreshAuthState = async () => {
+    try {
+      const signedIn = await puter.auth.isSignedIn();
+      setIsSignedIn(!!signedIn);
+      if (!signedIn) {
+        setUserName(null);
+        return;
+      }
+      try {
+        const user = await puter.auth.getUser();
+        setUserName(user?.username || null);
+      } catch {
+        setUserName(null);
+      }
+    } catch {
+      setIsSignedIn(false);
+      setUserName(null);
+    }
+  };
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      if (!active) return;
+      await refreshAuthState();
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const handleAuthClick = async () => {
+    if (isSignedIn) {
+      try {
+        await puter.auth.signOut();
+      } catch (error) {
+        console.error("Puter sign-out failed:", error);
+      } finally {
+        setIsSignedIn(false);
+        setUserName(null);
+      }
+      return;
+    }
+    await onSignIn();
+    await refreshAuthState();
+  };
 
   return (
     <div className="min-h-screen bg-background relative overflow-x-hidden text-foreground">
@@ -70,15 +120,32 @@ const Landing: React.FC<LandingProps> = ({
           </div>
 
           <div className="flex items-center space-x-4">
-            <button
-              onClick={onSignIn}
-              className="text-xs font-bold uppercase tracking-wide text-zinc-900 hover:text-primary transition-colors"
-            >
-              Log In
-            </button>
-            <Button size="sm" onClick={scrollToUpload} className="rounded-md">
-              Get Started
-            </Button>
+            {isSignedIn && (
+              <span className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                {userName ? `Hi, ${userName}` : "Signed in"}
+              </span>
+            )}
+            {isSignedIn ? (
+              <Button
+                size="sm"
+                onClick={handleAuthClick}
+                className="rounded-md"
+              >
+                Log Out
+              </Button>
+            ) : (
+              <>
+                <button
+                  onClick={handleAuthClick}
+                  className="text-xs font-bold uppercase tracking-wide text-zinc-900 hover:text-primary transition-colors"
+                >
+                  Log In
+                </button>
+                <Button size="sm" onClick={scrollToUpload} className="rounded-md">
+                  Get Started
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </nav>

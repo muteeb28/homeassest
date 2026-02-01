@@ -25,6 +25,7 @@ export default function VisualizerRoute() {
     const search = new URLSearchParams(location.search);
     return search.get("source") === "public" ? "public" : "user";
   }, [location.search]);
+  const isPublicProject = queryScope === "public";
 
   useEffect(() => {
     if (id) setCurrentSessionId(id);
@@ -107,6 +108,8 @@ export default function VisualizerRoute() {
       projectName={id ? `Project ${id.slice(-4)}` : "Untitled Project"}
       projectId={id}
       initialRender={effectiveInitialRender}
+      isPublic={isPublicProject}
+      sharedBy={resolvedItem?.sharedBy || null}
     />
   );
 }

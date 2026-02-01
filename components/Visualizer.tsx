@@ -13,6 +13,8 @@ const Visualizer: React.FC<VisualizerProps> = ({
   projectName,
   projectId,
   initialRender,
+  isPublic = false,
+  sharedBy = null,
 }) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [authRequired, setAuthRequired] = useState(false);
@@ -49,7 +51,7 @@ const Visualizer: React.FC<VisualizerProps> = ({
   };
 
   const handleShare = async () => {
-    if (!currentImage || !onShare) return;
+    if (!currentImage || !onShare || isPublic) return;
     setShareStatus("saving");
     try {
       await onShare(currentImage);
@@ -214,6 +216,11 @@ const Visualizer: React.FC<VisualizerProps> = ({
               <h2 className="text-2xl font-serif font-bold text-black">
                 {projectName || "Untitled Project"}
               </h2>
+              {isPublic && (
+                <p className="text-xs text-zinc-500 mt-1">
+                  Shared by {sharedBy || "Community"}
+                </p>
+              )}
             </div>
             <div className="flex flex-wrap items-center gap-3">
               <Button
@@ -229,11 +236,17 @@ const Visualizer: React.FC<VisualizerProps> = ({
                 onClick={handleShare}
                 className="bg-black text-white h-9 shadow-sm hover:bg-zinc-800"
                 disabled={
-                  !currentImage || isProcessing || shareStatus === "saving"
+                  isPublic ||
+                  !currentImage ||
+                  isProcessing ||
+                  shareStatus === "saving" ||
+                  !onShare
                 }
               >
                 <Share2 className="w-4 h-4 mr-2" />
-                {shareStatus === "saving"
+                {isPublic
+                  ? "Already Shared"
+                  : shareStatus === "saving"
                   ? "Sharing…"
                   : shareStatus === "done"
                     ? "Shared"

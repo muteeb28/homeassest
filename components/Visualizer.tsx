@@ -1,9 +1,19 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Box, Download, RefreshCw, Share2, X, AlertTriangle } from "lucide-react";
-import { ReactCompareSlider, ReactCompareSliderImage } from "react-compare-slider";
+import {
+  Box,
+  Download,
+  RefreshCw,
+  Share2,
+  X,
+  AlertTriangle,
+} from "lucide-react";
+import {
+  ReactCompareSlider,
+  ReactCompareSliderImage,
+} from "react-compare-slider";
 import { Button } from "./ui/Button";
-import { puter } from "@heyputer/puter.js";
-import { ROOMIFY_RENDER_PROMPT } from "../constants";
+import { useOutletContext } from "react-router";
+import { generate3DView } from "../lib/ai.action";
 
 const Visualizer: React.FC<VisualizerProps> = ({
   onBack,
@@ -18,6 +28,7 @@ const Visualizer: React.FC<VisualizerProps> = ({
   sharedBy = null,
   canUnshare = false,
 }) => {
+  const { isSignedIn, signIn } = useOutletContext<AuthContext>();
   const [isProcessing, setIsProcessing] = useState(false);
   const [authRequired, setAuthRequired] = useState(false);
   const [currentImage, setCurrentImage] = useState<string | null>(
@@ -26,9 +37,9 @@ const Visualizer: React.FC<VisualizerProps> = ({
   const [shareStatus, setShareStatus] = useState<"idle" | "saving" | "done">(
     "idle",
   );
-  const [unshareStatus, setUnshareStatus] = useState<
-    "idle" | "saving" | "done"
-  >("idle");
+  const [shareAction, setShareAction] = useState<"share" | "unshare" | null>(
+    null,
+  );
 
   const hasInitialGenerated = useRef(false);
 
@@ -42,106 +53,63 @@ const Visualizer: React.FC<VisualizerProps> = ({
     document.body.removeChild(link);
   };
 
-  const handleSignIn = async () => {
-    try {
-      await puter.auth.signIn();
-      setAuthRequired(false);
-      if (!currentImage && initialImage) {
-        hasInitialGenerated.current = true;
-        generate3DView(true);
-      }
-    } catch (error) {
-      console.error("Puter sign-in failed:", error);
+  const handleShareToggle = async () => {
+    if (!currentImage || isProcessing) return;
+    if (!isSignedIn) {
+      setAuthRequired(true);
+      return;
     }
-  };
 
-  const handleShare = async () => {
-    if (!currentImage || !onShare || isPublic) return;
+    const nextAction = isPublic ? "unshare" : "share";
+    if (nextAction === "share" && !onShare) return;
+    if (nextAction === "unshare" && (!onUnshare || !canUnshare)) return;
+
+    setShareAction(nextAction);
     setShareStatus("saving");
+
     try {
-      await onShare(currentImage);
+      if (nextAction === "share") {
+        await onShare(currentImage);
+      } else {
+        await onUnshare(currentImage);
+      }
+
       setShareStatus("done");
-      window.setTimeout(() => setShareStatus("idle"), 1500);
+      window.setTimeout(() => {
+        setShareStatus("idle");
+        setShareAction(null);
+      }, 1500);
     } catch (error) {
-      console.error("Share failed:", error);
+      console.error(`${nextAction} failed:`, error);
       setShareStatus("idle");
+      setShareAction(null);
     }
   };
 
-  const handleUnshare = async () => {
-    if (!currentImage || !onUnshare || !isPublic) return;
-    setUnshareStatus("saving");
-    try {
-      await onUnshare(currentImage);
-      setUnshareStatus("done");
-      window.setTimeout(() => setUnshareStatus("idle"), 1500);
-    } catch (error) {
-      console.error("Unshare failed:", error);
-      setUnshareStatus("idle");
-    }
-  };
-  const generate3DView = async (isInitial: boolean = false) => {
+  const runGeneration = async () => {
     if (!initialImage) return;
 
     setAuthRequired(false);
 
     try {
-      const signedIn = await puter.auth.isSignedIn();
-      if (!signedIn) {
+      if (!isSignedIn) {
         setAuthRequired(true);
         return;
       }
 
       setIsProcessing(true);
 
-      const sourceImage = initialImage;
-      const base64Data = sourceImage.split(",")[1];
-      const mimeType = sourceImage.split(";")[0].split(":")[1];
-
-      const response = await puter.ai.txt2img(ROOMIFY_RENDER_PROMPT, {
-        provider: "gemini",
-        model: "gemini-2.5-flash-image-preview",
-        input_image: base64Data,
-        input_image_mime_type: mimeType,
-        ratio: { w: 1024, h: 1024 },
+      const result = await generate3DView({
+        sourceImage: initialImage,
+        projectId,
       });
 
-      const rawImageUrl =
-        typeof response === "string"
-          ? response
-          : response instanceof HTMLImageElement
-            ? response.src
-            : null;
-
-      let newImageUrl = rawImageUrl;
-      let storedPath: string | undefined;
-
-      if (rawImageUrl) {
-        try {
-          const blob = await (await fetch(rawImageUrl)).blob();
-          try {
-            await puter.fs.mkdir("roomify/renders", { recursive: true });
-          } catch (error) {
-            console.warn("Failed to ensure render directory:", error);
-          }
-          const fileName = projectId
-            ? `roomify/renders/${projectId}.png`
-            : `roomify/renders/${Date.now()}.png`;
-          await puter.fs.write(fileName, blob);
-          storedPath = fileName;
-          newImageUrl = await puter.fs.getReadURL(fileName);
-        } catch (error) {
-          console.error("Failed to store image in Puter FS:", error);
-          newImageUrl = rawImageUrl;
-        }
-      }
-
-      if (newImageUrl) {
-        setCurrentImage(newImageUrl);
+      if (result.renderedImage) {
+        setCurrentImage(result.renderedImage);
         if (onRenderComplete) {
           onRenderComplete({
-            renderedImage: newImageUrl,
-            renderedPath: storedPath,
+            renderedImage: result.renderedImage,
+            renderedPath: result.renderedPath,
           });
         }
       }
@@ -162,8 +130,9 @@ const Visualizer: React.FC<VisualizerProps> = ({
       hasInitialGenerated.current = true;
       return;
     }
+
     hasInitialGenerated.current = true;
-    generate3DView(true);
+    runGeneration();
   }, [initialImage, initialRender]);
 
   return (
@@ -183,7 +152,19 @@ const Visualizer: React.FC<VisualizerProps> = ({
             </p>
             <div className="flex flex-col space-y-3">
               <Button
-                onClick={handleSignIn}
+                onClick={async () => {
+                  try {
+                    const signedIn = await signIn();
+                    if (!signedIn) return;
+                    setAuthRequired(false);
+                    if (!currentImage && initialImage) {
+                      hasInitialGenerated.current = true;
+                      runGeneration();
+                    }
+                  } catch (error) {
+                    console.error("Puter sign-in failed:", error);
+                  }
+                }}
                 fullWidth
                 className="bg-primary hover:bg-orange-600 text-white"
               >
@@ -248,48 +229,32 @@ const Visualizer: React.FC<VisualizerProps> = ({
               >
                 <Download className="w-4 h-4 mr-2" /> Export
               </Button>
-              {isPublic ? (
-                <Button
-                  size="sm"
-                  onClick={handleUnshare}
-                  className="bg-black text-white h-9 shadow-sm hover:bg-zinc-800"
-                  disabled={
-                    !currentImage ||
-                    isProcessing ||
-                    unshareStatus === "saving" ||
-                    !onUnshare ||
-                    !canUnshare
-                  }
-                >
-                  <Share2 className="w-4 h-4 mr-2" />
-                  {!canUnshare
-                    ? "Shared"
-                    : unshareStatus === "saving"
+              <Button
+                size="sm"
+                onClick={handleShareToggle}
+                className="bg-black text-white h-9 shadow-sm hover:bg-zinc-800"
+                disabled={
+                  !currentImage ||
+                  isProcessing ||
+                  shareStatus === "saving" ||
+                  (isPublic ? !onUnshare || !canUnshare : !onShare)
+                }
+              >
+                <Share2 className="w-4 h-4 mr-2" />
+                {!canUnshare && isPublic
+                  ? "Shared"
+                  : shareStatus === "saving"
+                    ? shareAction === "unshare"
                       ? "Unsharing…"
-                      : unshareStatus === "done"
-                        ? "Unshared"
-                        : "Unshare"}
-                </Button>
-              ) : (
-                <Button
-                  size="sm"
-                  onClick={handleShare}
-                  className="bg-black text-white h-9 shadow-sm hover:bg-zinc-800"
-                  disabled={
-                    !currentImage ||
-                    isProcessing ||
-                    shareStatus === "saving" ||
-                    !onShare
-                  }
-                >
-                  <Share2 className="w-4 h-4 mr-2" />
-                  {shareStatus === "saving"
-                    ? "Sharing…"
+                      : "Sharing…"
                     : shareStatus === "done"
-                      ? "Shared"
-                      : "Share"}
-                </Button>
-              )}
+                      ? shareAction === "unshare"
+                        ? "Unshared"
+                        : "Shared"
+                      : isPublic
+                        ? "Unshare"
+                        : "Share"}
+              </Button>
             </div>
           </div>
 

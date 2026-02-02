@@ -207,20 +207,8 @@ router.get("/api/projects/get", async ({ request, user, me }) => {
 
   const key = `${PROJECT_PREFIX}${id}`;
   const project = await kvGetProject(userPuter.kv, key);
-
-  const mePuter = getMePuter(me);
-  if (project) return { project: await hydrateProject(userPuter, project) };
-
-  const userId = await getUserId(user);
-  if (!mePuter || !userId) return jsonError(404, "Project not found");
-
-  const publicKey = getPublicKey(userId, id);
-  const publicProject = await kvGetProject(mePuter.kv, publicKey);
-
-  if (publicProject)
-    return { project: await hydratePublicProject(mePuter, publicProject) };
-
-  return jsonError(404, "Project not found");
+  if (!project) return jsonError(404, "Project not found");
+  return { project: await hydrateProject(userPuter, project) };
 });
 
 router.post("/api/projects/save", async ({ request, user, me }) => {

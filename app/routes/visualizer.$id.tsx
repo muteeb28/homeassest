@@ -1,39 +1,94 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { Navigate, useLocation, useNavigate, useOutletContext, useParams } from "react-router";
+import React, { useEffect, useState } from "react";
+import {
+  Navigate,
+  useLocation,
+  useNavigate,
+  useOutletContext,
+  useParams,
+} from "react-router";
 import Visualizer from "../../components/Visualizer";
+import {
+  getProjectById,
+  saveProject,
+  shareProject,
+  unshareProject,
+} from "../../lib/puter.action";
 
 export default function VisualizerRoute() {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const {
-    designHistory,
-    uploadedImage,
-    selectedInitialRender,
-    setUploadedImage,
-    setSelectedInitialRender,
-    setCurrentSessionId,
-    fetchProjectById,
-    handleRenderComplete,
-    handleShareCurrent,
-    currentUserId,
-  } = useOutletContext<AppContext>();
   const [resolvedItem, setResolvedItem] = useState<DesignHistoryItem | null>(null);
   const [isResolving, setIsResolving] = useState(false);
+  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+  const [selectedInitialRender, setSelectedInitialRender] = useState<string | null>(null);
+  const { userId: currentUserId, isSignedIn, signIn } =
+    useOutletContext<AuthContext>();
 
-  const queryScope = useMemo(() => {
-    const search = new URLSearchParams(location.search);
-    return search.get("source") === "public" ? "public" : "user";
-  }, [location.search]);
-  const queryOwnerId = useMemo(() => {
-    const search = new URLSearchParams(location.search);
-    return search.get("ownerId");
-  }, [location.search]);
+  const search = new URLSearchParams(location.search);
+  const queryScope = search.get("source") === "user" ? "user" : "public";
+  const queryOwnerId = search.get("ownerId");
   const isPublicProject = queryScope === "public";
 
-  useEffect(() => {
-    if (id) setCurrentSessionId(id);
-  }, [id, setCurrentSessionId]);
+  const fetchProjectById = async (
+    projectId: string,
+    scope: "user" | "public",
+    ownerId?: string | null,
+  ) => {
+    if (scope === "user" && !isSignedIn) {
+      const signedIn = await signIn();
+      if (!signedIn) return null;
+    }
+
+    return await getProjectById({ id: projectId, scope, ownerId });
+  };
+
+
+  const handleRenderComplete = async (payload: {
+    renderedImage: string;
+    renderedPath?: string;
+  }) => {
+    if (!id) return;
+    const updatedItem = {
+      id,
+      name: resolvedItem?.name || `Residence ${id}`,
+      sourceImage: uploadedImage || "",
+      renderedImage: payload.renderedImage,
+      renderedPath: payload.renderedPath,
+      timestamp: Date.now(),
+      ownerId: resolvedItem?.ownerId || null,
+      isPublic: resolvedItem?.isPublic || false,
+    };
+    setResolvedItem(updatedItem);
+    await saveProject(
+      updatedItem,
+      updatedItem.isPublic ? "public" : "private",
+    );
+  };
+
+  const handleShareCurrent = async (
+    image: string,
+    opts?: { visibility?: "private" | "public" },
+  ) => {
+    if (!id) return;
+    const visibility = opts?.visibility || "public";
+    const updatedItem = {
+      id,
+      name: resolvedItem?.name || `Residence ${id}`,
+      sourceImage: uploadedImage || "",
+      renderedImage: image,
+      renderedPath: resolvedItem?.renderedPath,
+      timestamp: Date.now(),
+      ownerId: resolvedItem?.ownerId || null,
+      isPublic: visibility === "public",
+    };
+    setResolvedItem(updatedItem);
+    if (visibility === "public") {
+      await shareProject(updatedItem);
+    } else {
+      await unshareProject(updatedItem);
+    }
+  };
 
   useEffect(() => {
     if (!id) return;
@@ -56,18 +111,6 @@ export default function VisualizerRoute() {
       return;
     }
 
-    const localSource =
-      queryScope === "public"
-        ? designHistory.filter((entry) => entry.isPublic)
-        : designHistory;
-    const localItem = localSource.find((entry) => entry.id === id);
-    if (localItem) {
-      setResolvedItem(localItem);
-      setUploadedImage(localItem.sourceImage);
-      setSelectedInitialRender(localItem.renderedImage || null);
-      return;
-    }
-
     const resolve = async () => {
       setIsResolving(true);
       const fetched = await fetchProjectById(id, queryScope, queryOwnerId);
@@ -85,16 +128,7 @@ export default function VisualizerRoute() {
     return () => {
       cancelled = true;
     };
-  }, [
-    id,
-    location.state,
-    queryScope,
-    queryOwnerId,
-    designHistory,
-    fetchProjectById,
-    setUploadedImage,
-    setSelectedInitialRender,
-  ]);
+  }, [id, location.state, queryScope, queryOwnerId, isPublicProject]);
 
   if (!id) return <Navigate to="/" replace />;
 
@@ -115,6 +149,7 @@ export default function VisualizerRoute() {
     isPublicProject &&
     !!currentUserId &&
     resolvedItem?.ownerId === currentUserId;
+
   return (
     <Visualizer
       onBack={() => navigate("/")}

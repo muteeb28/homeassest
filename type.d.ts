@@ -42,34 +42,6 @@ declare global {
     renderedPath?: string;
   };
 
-  type AppContext = {
-    designHistory: DesignHistoryItem[];
-    isLoadingHistory: boolean;
-    uploadedImage: string | null;
-    currentSessionId: string | null;
-    selectedInitialRender: string | null;
-    currentUserId: string | null;
-    setDesignHistory: React.Dispatch<React.SetStateAction<DesignHistoryItem[]>>;
-    setUploadedImage: React.Dispatch<React.SetStateAction<string | null>>;
-    setCurrentSessionId: React.Dispatch<React.SetStateAction<string | null>>;
-    setSelectedInitialRender: React.Dispatch<React.SetStateAction<string | null>>;
-    fetchProjectById: (
-      id: string,
-      scope: "user" | "public",
-      ownerId?: string | null,
-    ) => Promise<DesignHistoryItem | null>;
-    saveProject: (
-      item: DesignHistoryItem,
-      visibility?: "private" | "public",
-    ) => Promise<void>;
-    handleRenderComplete: (payload: RenderCompletePayload) => void;
-    handleShareCurrent: (
-      image: string,
-      opts?: { visibility?: "private" | "public" },
-    ) => Promise<void>;
-    handleSignIn: () => Promise<void>;
-    fetchHistory: () => Promise<void>;
-  };
 
   type VisualizerLocationState = {
     initialImage?: string;
@@ -92,14 +64,6 @@ declare global {
     canUnshare?: boolean;
   }
 
-  interface LandingProps {
-    onStart: (file: string) => void;
-    history: DesignHistoryItem[];
-    onSelectHistory: (id: string) => void;
-    onSignIn: () => Promise<void>;
-    isLoadingHistory: boolean;
-  }
-
   interface UploadProps {
     onComplete: (base64File: string) => void;
     className?: string;
@@ -117,6 +81,15 @@ declare global {
     title?: string;
     action?: React.ReactNode;
   }
+
+  type AuthContext = {
+    isSignedIn: boolean;
+    userName: string | null;
+    userId: string | null;
+    refreshAuth: () => Promise<boolean>;
+    signIn: () => Promise<boolean>;
+    signOut: () => Promise<boolean>;
+  };
 }
 
 export {};

@@ -1,12 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import {
-  Box,
-  Download,
-  RefreshCw,
-  Share2,
-  X,
-  AlertTriangle,
-} from "lucide-react";
+import { Box, Download, RefreshCw, Share2, X } from "lucide-react";
 import {
   ReactCompareSlider,
   ReactCompareSliderImage,
@@ -14,6 +7,7 @@ import {
 import { Button } from "./ui/Button";
 import { useOutletContext } from "react-router";
 import { generate3DView } from "../lib/ai.action";
+import AuthRequiredModal from "./AuthRequiredModal";
 
 const Visualizer: React.FC<VisualizerProps> = ({
   onBack,
@@ -40,6 +34,7 @@ const Visualizer: React.FC<VisualizerProps> = ({
   const [shareAction, setShareAction] = useState<"share" | "unshare" | null>(
     null,
   );
+  const [isShared, setIsShared] = useState(isPublic);
 
   const hasInitialGenerated = useRef(false);
 
@@ -60,7 +55,7 @@ const Visualizer: React.FC<VisualizerProps> = ({
       return;
     }
 
-    const nextAction = isPublic ? "unshare" : "share";
+    const nextAction = isShared ? "unshare" : "share";
     if (nextAction === "share" && !onShare) return;
     if (nextAction === "unshare" && (!onUnshare || !canUnshare)) return;
 
@@ -70,8 +65,10 @@ const Visualizer: React.FC<VisualizerProps> = ({
     try {
       if (nextAction === "share") {
         await onShare(currentImage);
+        setIsShared(true);
       } else {
         await onUnshare(currentImage);
+        setIsShared(false);
       }
 
       setShareStatus("done");
@@ -124,6 +121,10 @@ const Visualizer: React.FC<VisualizerProps> = ({
   };
 
   useEffect(() => {
+    setIsShared(isPublic);
+  }, [isPublic, projectId]);
+
+  useEffect(() => {
     if (!initialImage || hasInitialGenerated.current) return;
     if (initialRender) {
       setCurrentImage(initialRender);
@@ -137,52 +138,27 @@ const Visualizer: React.FC<VisualizerProps> = ({
 
   return (
     <div className="min-h-screen bg-background pt-6 pb-10 px-4 md:px-6 flex flex-col items-center font-sans relative">
-      {authRequired && (
-        <div className="absolute inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 text-center border border-zinc-200">
-            <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <AlertTriangle className="text-primary w-6 h-6" />
-            </div>
-            <h3 className="text-xl font-serif font-bold text-black mb-2">
-              Sign in required
-            </h3>
-            <p className="text-zinc-600 text-sm mb-6 leading-relaxed">
-              Sign in with your Puter account to generate and share
-              visualizations.
-            </p>
-            <div className="flex flex-col space-y-3">
-              <Button
-                onClick={async () => {
-                  try {
-                    const signedIn = await signIn();
-                    if (!signedIn) return;
-                    setAuthRequired(false);
-                    if (!currentImage && initialImage) {
-                      hasInitialGenerated.current = true;
-                      runGeneration();
-                    }
-                  } catch (error) {
-                    console.error("Puter sign-in failed:", error);
-                  }
-                }}
-                fullWidth
-                className="bg-primary hover:bg-orange-600 text-white"
-              >
-                Sign in with Puter
-              </Button>
-              <button
-                onClick={() => {
-                  setAuthRequired(false);
-                  setIsProcessing(false);
-                }}
-                className="text-xs text-zinc-400 hover:text-black mt-2"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <AuthRequiredModal
+        isOpen={authRequired}
+        onConfirm={async () => {
+          try {
+            const signedIn = await signIn();
+            if (!signedIn) return;
+            setAuthRequired(false);
+            if (!currentImage && initialImage) {
+              hasInitialGenerated.current = true;
+              runGeneration();
+            }
+          } catch (error) {
+            console.error("Puter sign-in failed:", error);
+          }
+        }}
+        onCancel={() => {
+          setAuthRequired(false);
+          setIsProcessing(false);
+        }}
+        description="Sign in with your Puter account to generate and share visualizations."
+      />
 
       <nav className="w-full max-w-6xl flex items-center justify-between mb-6 px-2">
         <div
@@ -237,11 +213,11 @@ const Visualizer: React.FC<VisualizerProps> = ({
                   !currentImage ||
                   isProcessing ||
                   shareStatus === "saving" ||
-                  (isPublic ? !onUnshare || !canUnshare : !onShare)
+                  (isShared ? !onUnshare || !canUnshare : !onShare)
                 }
               >
                 <Share2 className="w-4 h-4 mr-2" />
-                {!canUnshare && isPublic
+                {!canUnshare && isShared
                   ? "Shared"
                   : shareStatus === "saving"
                     ? shareAction === "unshare"
@@ -251,7 +227,7 @@ const Visualizer: React.FC<VisualizerProps> = ({
                       ? shareAction === "unshare"
                         ? "Unshared"
                         : "Shared"
-                      : isPublic
+                      : isShared
                         ? "Unshare"
                         : "Share"}
               </Button>

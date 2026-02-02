@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Upload as UploadIcon,
   CheckCircle2,
   Image as ImageIcon,
 } from "lucide-react";
 import { useOutletContext } from "react-router";
+import AuthRequiredModal from "./AuthRequiredModal";
 
 const Upload: React.FC<UploadProps> = ({ onComplete, className = "" }) => {
   const [isDragging, setIsDragging] = useState(false);
@@ -13,21 +14,20 @@ const Upload: React.FC<UploadProps> = ({ onComplete, className = "" }) => {
   const [progress, setProgress] = useState(0);
   const [base64Data, setBase64Data] = useState<string | null>(null);
 
-  const [authMessage, setAuthMessage] = useState<string | null>(null);
+  const [authRequired, setAuthRequired] = useState(false);
   const { isSignedIn, signIn } = useOutletContext<AuthContext>();
 
   const ensureSignedInForUpload = async () => {
     if (isSignedIn) {
-      setAuthMessage(null);
       return true;
     }
 
-    setAuthMessage("Please sign in with Puter to upload a floor plan.");
+    setAuthRequired(true);
 
     try {
       const signedIn = await signIn();
       if (signedIn) {
-        setAuthMessage(null);
+        setAuthRequired(false);
         return true;
       }
     } catch (error) {
@@ -133,9 +133,6 @@ const Upload: React.FC<UploadProps> = ({ onComplete, className = "" }) => {
               Click to upload or drag and drop
             </p>
             <p className="text-zinc-500 text-xs">Maximum file size 50 MB.</p>
-            {authMessage && (
-              <p className="text-red-500 text-xs mt-2">{authMessage}</p>
-            )}
           </div>
         </div>
       ) : (
@@ -166,6 +163,20 @@ const Upload: React.FC<UploadProps> = ({ onComplete, className = "" }) => {
           </div>
         </div>
       )}
+
+      <AuthRequiredModal
+        isOpen={authRequired}
+        onConfirm={async () => {
+          try {
+            const signedIn = await signIn();
+            if (signedIn) setAuthRequired(false);
+          } catch (error) {
+            console.error("Puter sign-in failed:", error);
+          }
+        }}
+        onCancel={() => setAuthRequired(false)}
+        description="Sign in with your Puter account to upload a floor plan."
+      />
     </div>
   );
 };

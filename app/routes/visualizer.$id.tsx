@@ -145,8 +145,9 @@ export default function VisualizerRoute() {
 
   const resolvedName =
     resolvedItem?.name || (id ? `Residence ${id}` : "Untitled Project");
+  const resolvedIsPublic = resolvedItem?.isPublic ?? isPublicProject;
   const canUnshare =
-    isPublicProject &&
+    resolvedIsPublic &&
     !!currentUserId &&
     resolvedItem?.ownerId === currentUserId;
 
@@ -162,7 +163,7 @@ export default function VisualizerRoute() {
       projectName={resolvedName}
       projectId={id}
       initialRender={effectiveInitialRender}
-      isPublic={isPublicProject}
+      isPublic={resolvedIsPublic}
       sharedBy={resolvedItem?.sharedBy || null}
       canUnshare={canUnshare}
     />

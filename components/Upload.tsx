@@ -6,34 +6,13 @@ import {
 } from "lucide-react";
 import { useOutletContext } from "react-router";
 
-import AuthRequiredModal from "./AuthRequiredModal";
-
 const Upload = ({ onComplete, className = "" }: UploadProps) => {
   const [isDragging, setIsDragging] = useState(false);
   const [file, setFile] = useState<File | null>(null);
 
   const [progress, setProgress] = useState(0);
 
-  const [authRequired, setAuthRequired] = useState(false);
-  const { isSignedIn, signIn } = useOutletContext<AuthContext>();
-
-  const ensureSignedInForUpload = async () => {
-    if (isSignedIn) return true;
-
-    setAuthRequired(true);
-
-    try {
-      const signedIn = await signIn();
-      if (signedIn) {
-        setAuthRequired(false);
-        return true;
-      }
-    } catch (error) {
-      console.error("Puter sign-in failed:", error);
-    }
-
-    return false;
-  };
+  const { isSignedIn } = useOutletContext<AuthContext>();
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -45,18 +24,14 @@ const Upload = ({ onComplete, className = "" }: UploadProps) => {
   const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
-
-    const canUpload = await ensureSignedInForUpload();
-    if (!canUpload) return;
+    if (!isSignedIn) return;
 
     if (e.dataTransfer.files && e.dataTransfer.files[0])
       processFile(e.dataTransfer.files[0]);
   };
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const canUpload = await ensureSignedInForUpload();
-
-    if (!canUpload) {
+    if (!isSignedIn) {
       e.currentTarget.value = "";
       return;
     }
@@ -109,13 +84,18 @@ const Upload = ({ onComplete, className = "" }: UploadProps) => {
             className="drop-input"
             onChange={handleFileSelect}
             accept=".jpg,.jpeg,.png"
+            disabled={!isSignedIn}
           />
 
           <div className="drop-content">
             <div className="drop-icon">
               <UploadIcon size={20} />
             </div>
-            <p>Click to upload or drag and drop</p>
+            <p>
+              {isSignedIn
+                ? "Click to upload or drag and drop"
+                : "Sign in or sign up with Puter to upload"}
+            </p>
             <p className="help">Maximum file size 50 MB.</p>
           </div>
         </div>
@@ -143,19 +123,6 @@ const Upload = ({ onComplete, className = "" }: UploadProps) => {
         </div>
       )}
 
-      <AuthRequiredModal
-        isOpen={authRequired}
-        onConfirm={async () => {
-          try {
-            const signedIn = await signIn();
-            if (signedIn) setAuthRequired(false);
-          } catch (error) {
-            console.error("Puter sign-in failed:", error);
-          }
-        }}
-        onCancel={() => setAuthRequired(false)}
-        description="Sign in with your Puter account to upload a floor plan."
-      />
     </div>
   );
 };

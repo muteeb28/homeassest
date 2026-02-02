@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useOutletContext } from "react-router";
 import {
   ArrowRight,
@@ -10,12 +10,15 @@ import {
   Zap,
 } from "lucide-react";
 import { puter } from "@heyputer/puter.js";
-import { PUTER_WORKER_URL } from "../../constants";
-import Upload from "../../components/Upload";
-import { Button } from "../../components/ui/Button";
-import Navbar from "../../components/Navbar";
+
+import { PUTER_WORKER_URL } from "@/constants";
 import RefreshCwIcon from "@/assets/RefreshCwIcon";
-import { getProjects, saveProject } from "../../lib/puter.action";
+
+import Upload from "@/components/Upload";
+import Navbar from "@/components/Navbar";
+import { Button } from "@/components/ui/Button";
+
+import { getProjects, saveProject } from "@/lib/puter.action";
 
 export default function IndexRoute() {
   const navigate = useNavigate();
@@ -108,7 +111,7 @@ export default function IndexRoute() {
         <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
           <a
             href="#upload"
-            className="inline-flex items-center justify-center rounded-md font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#FDFBF7] px-8 py-3 text-sm uppercase tracking-wide font-bold bg-[#F97316] text-white hover:bg-[#ea580c] shadow-md"
+            className="inline-flex items-center justify-center rounded-md  transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-background px-8 py-3 text-sm uppercase tracking-wide font-bold bg-primary text-white hover:bg-[#ea580c] shadow-md"
           >
             Start Building <ArrowRight className="ml-2 w-4 h-4" />
           </a>
@@ -123,7 +126,7 @@ export default function IndexRoute() {
 
         <div
           id="upload"
-          className="w-full max-w-5xl mx-auto relative rounded-3xl overflow-hidden bg-gradient-to-b from-blue-100/50 to-white/50 border border-blue-100 p-6 md:p-12 shadow-sm min-h-[400px] flex items-center justify-center"
+          className="w-full max-w-5xl mx-auto relative rounded-3xl overflow-hidden bg-linear-to-b from-blue-100/50 to-white/50 border border-blue-100 p-6 md:p-12 shadow-sm min-h-100 flex items-center justify-center"
         >
           <div
             className="absolute inset-0 opacity-40 pointer-events-none"
@@ -198,7 +201,7 @@ export default function IndexRoute() {
                       }}
                       className="group relative bg-white rounded-xl overflow-hidden border border-zinc-200 shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col h-full"
                     >
-                      <div className="aspect-[4/3] overflow-hidden bg-zinc-100 relative">
+                      <div className="aspect-4/3 overflow-hidden bg-zinc-100 relative">
                         <img
                           src={item.renderedImage || item.sourceImage}
                           alt={`Project ${designHistory.length - index}`}
@@ -213,7 +216,7 @@ export default function IndexRoute() {
                         )}
                       </div>
 
-                      <div className="p-5 flex justify-between items-center bg-white border-t border-zinc-100 flex-grow">
+                      <div className="p-5 flex justify-between items-center bg-white border-t border-zinc-100 grow">
                         <div>
                           <h3 className="text-lg font-serif font-bold text-zinc-900 group-hover:text-primary transition-colors">
                             {name}

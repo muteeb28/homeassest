@@ -6,24 +6,33 @@ import {
   useOutletContext,
   useParams,
 } from "react-router";
-import Visualizer from "../../components/Visualizer";
+
 import {
   getProjectById,
   saveProject,
   shareProject,
   unshareProject,
-} from "../../lib/puter.action";
+} from "@/lib/puter.action";
+
+import Visualizer from "@/components/Visualizer";
 
 export default function VisualizerRoute() {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const [resolvedItem, setResolvedItem] = useState<DesignHistoryItem | null>(null);
+  const [resolvedItem, setResolvedItem] = useState<DesignHistoryItem | null>(
+    null,
+  );
   const [isResolving, setIsResolving] = useState(false);
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
-  const [selectedInitialRender, setSelectedInitialRender] = useState<string | null>(null);
-  const { userId: currentUserId, isSignedIn, signIn } =
-    useOutletContext<AuthContext>();
+  const [selectedInitialRender, setSelectedInitialRender] = useState<
+    string | null
+  >(null);
+  const {
+    userId: currentUserId,
+    isSignedIn,
+    signIn,
+  } = useOutletContext<AuthContext>();
 
   const search = new URLSearchParams(location.search);
   const queryScope = search.get("source") === "user" ? "user" : "public";
@@ -43,7 +52,6 @@ export default function VisualizerRoute() {
     return await getProjectById({ id: projectId, scope, ownerId });
   };
 
-
   const handleRenderComplete = async (payload: {
     renderedImage: string;
     renderedPath?: string;
@@ -60,10 +68,7 @@ export default function VisualizerRoute() {
       isPublic: resolvedItem?.isPublic || false,
     };
     setResolvedItem(updatedItem);
-    await saveProject(
-      updatedItem,
-      updatedItem.isPublic ? "public" : "private",
-    );
+    await saveProject(updatedItem, updatedItem.isPublic ? "public" : "private");
   };
 
   const handleShareCurrent = async (
@@ -133,7 +138,8 @@ export default function VisualizerRoute() {
   if (!id) return <Navigate to="/" replace />;
 
   const effectiveInitialImage = resolvedItem?.sourceImage || uploadedImage;
-  const effectiveInitialRender = selectedInitialRender ?? resolvedItem?.renderedImage ?? null;
+  const effectiveInitialRender =
+    selectedInitialRender ?? resolvedItem?.renderedImage ?? null;
 
   if (!effectiveInitialImage && isResolving) {
     return (

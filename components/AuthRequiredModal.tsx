@@ -1,28 +1,19 @@
-import React from "react";
 import { AlertTriangle } from "lucide-react";
+
 import { Button } from "./ui/Button";
 
-type AuthRequiredModalProps = {
-  isOpen: boolean;
-  onConfirm: () => void;
-  onCancel: () => void;
-  title?: string;
-  description?: string;
-  confirmLabel?: string;
-};
-
-const AuthRequiredModal: React.FC<AuthRequiredModalProps> = ({
+const AuthRequiredModal = ({
   isOpen,
   onConfirm,
   onCancel,
   title = "Sign in required",
   description = "Sign in with your Puter account to continue.",
   confirmLabel = "Sign in with Puter",
-}) => {
+}: AuthRequiredModalProps) => {
   if (!isOpen) return null;
 
   return (
-    <div className="absolute inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+    <div className="absolute inset-0 z-60 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
       <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 text-center border border-zinc-200">
         <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
           <AlertTriangle className="text-primary w-6 h-6" />

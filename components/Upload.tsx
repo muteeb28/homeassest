@@ -1,13 +1,14 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Upload as UploadIcon,
   CheckCircle2,
   Image as ImageIcon,
 } from "lucide-react";
 import { useOutletContext } from "react-router";
+
 import AuthRequiredModal from "./AuthRequiredModal";
 
-const Upload: React.FC<UploadProps> = ({ onComplete, className = "" }) => {
+const Upload = ({ onComplete, className = "" }: UploadProps) => {
   const [isDragging, setIsDragging] = useState(false);
   const [file, setFile] = useState<File | null>(null);
 
@@ -150,7 +151,7 @@ const Upload: React.FC<UploadProps> = ({ onComplete, className = "" }) => {
               {file.name}
             </h3>
 
-            <div className="w-full max-w-[200px] h-1.5 bg-zinc-100 rounded-full mt-3 overflow-hidden">
+            <div className="w-full max-w-50 h-1.5 bg-zinc-100 rounded-full mt-3 overflow-hidden">
               <div
                 className="h-full bg-primary transition-all duration-300 ease-out"
                 style={{ width: `${progress}%` }}

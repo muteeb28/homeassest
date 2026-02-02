@@ -1,9 +1,9 @@
-import React from "react";
 import { useOutletContext } from "react-router";
 import { Box } from "lucide-react";
+
 import { Button } from "./ui/Button";
 
-const Navbar: React.FC = () => {
+const Navbar = () => {
   const { isSignedIn, userName, signIn, signOut } =
     useOutletContext<AuthContext>();
 
@@ -25,7 +25,7 @@ const Navbar: React.FC = () => {
   };
 
   return (
-    <nav className="fixed top-0 w-full z-50 bg-[#FDFBF7]/90 backdrop-blur-sm border-b border-black/5">
+    <nav className="fixed top-0 w-full z-50 bg-background/90 backdrop-blur-sm border-b border-black/5">
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
         <div className="flex items-center space-x-8">
           <div className="flex items-center space-x-2 cursor-pointer">
@@ -82,7 +82,7 @@ const Navbar: React.FC = () => {
               </button>
               <a
                 href="#upload"
-                className="inline-flex items-center justify-center rounded-md font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#FDFBF7] disabled:opacity-50 disabled:cursor-not-allowed px-3 py-1.5 text-xs uppercase tracking-wide bg-[#F97316] text-white hover:bg-[#EA580C] shadow-sm"
+                className="inline-flex items-center justify-center rounded-md font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-background disabled:opacity-50 disabled:cursor-not-allowed px-3 py-1.5 text-xs uppercase tracking-wide bg-primary text-white hover:bg-[#EA580C] shadow-sm"
               >
                 Get Started
               </a>

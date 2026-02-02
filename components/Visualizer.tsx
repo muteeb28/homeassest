@@ -1,15 +1,17 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Box, Download, RefreshCw, Share2, X } from "lucide-react";
 import {
   ReactCompareSlider,
   ReactCompareSliderImage,
 } from "react-compare-slider";
-import { Button } from "./ui/Button";
 import { useOutletContext } from "react-router";
-import { generate3DView } from "../lib/ai.action";
+
+import { Button } from "./ui/Button";
 import AuthRequiredModal from "./AuthRequiredModal";
 
-const Visualizer: React.FC<VisualizerProps> = ({
+import { generate3DView } from "@/lib/ai.action";
+
+const Visualizer = ({
   onBack,
   initialImage,
   onRenderComplete,
@@ -21,7 +23,7 @@ const Visualizer: React.FC<VisualizerProps> = ({
   isPublic = false,
   sharedBy = null,
   canUnshare = false,
-}) => {
+}: VisualizerProps) => {
   const { isSignedIn, signIn } = useOutletContext<AuthContext>();
   const [isProcessing, setIsProcessing] = useState(false);
   const [authRequired, setAuthRequired] = useState(false);
@@ -234,7 +236,7 @@ const Visualizer: React.FC<VisualizerProps> = ({
             </div>
           </div>
 
-          <div className="relative bg-zinc-100 min-h-[420px]">
+          <div className="relative bg-zinc-100 min-h-105">
             {currentImage ? (
               <img
                 src={currentImage}
@@ -285,7 +287,7 @@ const Visualizer: React.FC<VisualizerProps> = ({
           <div className="relative bg-zinc-100 overflow-hidden">
             {initialImage && currentImage ? (
               <ReactCompareSlider
-                defaultPosition={50}
+                defaultValue={50}
                 style={{ width: "100%", height: "auto" }}
                 itemOne={
                   <ReactCompareSliderImage

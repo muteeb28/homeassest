@@ -10,7 +10,19 @@ const getMePuter = (meParam) =>
 const jsonError = (status, message, extra = {}) =>
   new Response(JSON.stringify({ error: message, ...extra }), {
     status,
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      "Access-Control-Allow-Origin": "*",
+    },
+  });
+
+const jsonOk = (payload) =>
+  new Response(JSON.stringify(payload), {
+    status: 200,
+    headers: {
+      "Content-Type": "application/json",
+      "Access-Control-Allow-Origin": "*",
+    },
   });
 
 const getUserId = async (userParam) => {
@@ -312,6 +324,17 @@ router.post("/api/projects/save", async ({ request, user, me }) => {
   await userPuter.kv.del(userKey);
 
   return { saved: true, id: project.id };
+});
+
+router.post("/api/projects/clear", async ({ user, me }) => {
+  const userPuter = getUserPuter(user);
+  if (!userPuter) return jsonError(401, "Authentication required");
+
+  const mePuter = getMePuter(me);
+  if (!mePuter) return jsonError(500, "Missing deployer Puter context.");
+
+  await Promise.all([userPuter.kv.clear(), mePuter.kv.clear()]);
+  return jsonOk({ cleared: true, clearedPublic: true });
 });
 
 router.get("/*path", async ({ params }) => {

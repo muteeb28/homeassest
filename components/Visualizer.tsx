@@ -30,23 +30,21 @@ const Visualizer = ({
   const [currentImage, setCurrentImage] = useState<string | null>(
     initialRender || null,
   );
-  const [shareStatus, setShareStatus] = useState<"idle" | "saving" | "done">(
-    "idle",
-  );
-  const [shareAction, setShareAction] = useState<"share" | "unshare" | null>(
-    null,
-  );
-  const [isShared, setIsShared] = useState(isPublic);
+  const [shareStatus, setShareStatus] = useState<ShareStatus>("idle");
+  const [shareAction, setShareAction] = useState<ShareAction | null>(null);
 
   const hasInitialGenerated = useRef(false);
 
   const handleExport = () => {
     if (!currentImage) return;
+
     const link = document.createElement("a");
     link.href = currentImage;
     link.download = `roomify-render-${Date.now()}.png`;
+
     document.body.appendChild(link);
     link.click();
+
     document.body.removeChild(link);
   };
 
@@ -57,7 +55,7 @@ const Visualizer = ({
       return;
     }
 
-    const nextAction = isShared ? "unshare" : "share";
+    const nextAction: ShareAction = isPublic ? "unshare" : "share";
     if (nextAction === "share" && !onShare) return;
     if (nextAction === "unshare" && (!onUnshare || !canUnshare)) return;
 
@@ -67,10 +65,8 @@ const Visualizer = ({
     try {
       if (nextAction === "share") {
         await onShare(currentImage);
-        setIsShared(true);
       } else {
         await onUnshare(currentImage);
-        setIsShared(false);
       }
 
       setShareStatus("done");
@@ -122,9 +118,21 @@ const Visualizer = ({
     }
   };
 
-  useEffect(() => {
-    setIsShared(isPublic);
-  }, [isPublic, projectId]);
+  const isReadOnlyShared = isPublic && !canUnshare;
+
+  const getShareLabel = () => {
+    if (isReadOnlyShared) return "Shared";
+
+    switch (shareStatus) {
+      case "saving":
+        return shareAction === "unshare" ? "Unsharing…" : "Sharing…";
+      case "done":
+        return shareAction === "unshare" ? "Unshared" : "Shared";
+      case "idle":
+      default:
+        return isPublic ? "Unshare" : "Share";
+    }
+  };
 
   useEffect(() => {
     if (!initialImage || hasInitialGenerated.current) return;
@@ -146,6 +154,7 @@ const Visualizer = ({
           try {
             const signedIn = await signIn();
             if (!signedIn) return;
+
             setAuthRequired(false);
             if (!currentImage && initialImage) {
               hasInitialGenerated.current = true;
@@ -167,12 +176,7 @@ const Visualizer = ({
           <Box className="logo" />
           <span className="name">Roomify</span>
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onBack}
-          className="exit"
-        >
+        <Button variant="ghost" size="sm" onClick={onBack} className="exit">
           <X className="icon" /> Exit Editor
         </Button>
       </nav>
@@ -206,36 +210,18 @@ const Visualizer = ({
                   !currentImage ||
                   isProcessing ||
                   shareStatus === "saving" ||
-                  (isShared ? !onUnshare || !canUnshare : !onShare)
+                  (isPublic ? !onUnshare || !canUnshare : !onShare)
                 }
               >
                 <Share2 className="w-4 h-4 mr-2" />
-                {!canUnshare && isShared
-                  ? "Shared"
-                  : shareStatus === "saving"
-                    ? shareAction === "unshare"
-                      ? "Unsharing…"
-                      : "Sharing…"
-                    : shareStatus === "done"
-                      ? shareAction === "unshare"
-                        ? "Unshared"
-                        : "Shared"
-                      : isShared
-                        ? "Unshare"
-                        : "Share"}
+                {getShareLabel()}
               </Button>
             </div>
           </div>
 
-          <div
-            className={`render-area ${isProcessing ? "is-processing" : ""}`}
-          >
+          <div className={`render-area ${isProcessing ? "is-processing" : ""}`}>
             {currentImage ? (
-              <img
-                src={currentImage}
-                alt="AI Render"
-                className="render-img"
-              />
+              <img src={currentImage} alt="AI Render" className="render-img" />
             ) : (
               <div className="render-placeholder">
                 {initialImage && (

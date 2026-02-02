@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   Upload as UploadIcon,
   CheckCircle2,
@@ -13,15 +13,12 @@ const Upload = ({ onComplete, className = "" }: UploadProps) => {
   const [file, setFile] = useState<File | null>(null);
 
   const [progress, setProgress] = useState(0);
-  const [base64Data, setBase64Data] = useState<string | null>(null);
 
   const [authRequired, setAuthRequired] = useState(false);
   const { isSignedIn, signIn } = useOutletContext<AuthContext>();
 
   const ensureSignedInForUpload = async () => {
-    if (isSignedIn) {
-      return true;
-    }
+    if (isSignedIn) return true;
 
     setAuthRequired(true);
 
@@ -43,18 +40,17 @@ const Upload = ({ onComplete, className = "" }: UploadProps) => {
     setIsDragging(true);
   };
 
-  const handleDragLeave = () => {
-    setIsDragging(false);
-  };
+  const handleDragLeave = () => setIsDragging(false);
 
   const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
+
     const canUpload = await ensureSignedInForUpload();
     if (!canUpload) return;
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+
+    if (e.dataTransfer.files && e.dataTransfer.files[0])
       processFile(e.dataTransfer.files[0]);
-    }
   };
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -76,31 +72,28 @@ const Upload = ({ onComplete, className = "" }: UploadProps) => {
     const reader = new FileReader();
     reader.onload = (e) => {
       const result = e.target?.result as string;
-      setBase64Data(result);
 
       // Simulate analysis progress
+      let completed = false;
       const interval = setInterval(() => {
         setProgress((prev) => {
-          if (prev >= 100) {
+          const next = Math.min(prev + 15, 100);
+
+          if (next === 100 && !completed) {
+            completed = true;
             clearInterval(interval);
-            return 100;
+            setTimeout(() => {
+              onComplete(result);
+            }, 600);
           }
-          return prev + 15; // Faster progress
+
+          return next;
         });
       }, 100);
     };
+
     reader.readAsDataURL(selectedFile);
   };
-
-  // Auto-advance when complete
-  useEffect(() => {
-    if (progress === 100 && base64Data) {
-      const timeout = setTimeout(() => {
-        onComplete(base64Data);
-      }, 600);
-      return () => clearTimeout(timeout);
-    }
-  }, [progress, base64Data, onComplete]);
 
   return (
     <div className={`upload ${className}`}>
@@ -140,10 +133,7 @@ const Upload = ({ onComplete, className = "" }: UploadProps) => {
             <h3>{file.name}</h3>
 
             <div className="progress">
-              <div
-                className="bar"
-                style={{ width: `${progress}%` }}
-              />
+              <div className="bar" style={{ width: `${progress}%` }} />
             </div>
 
             <p className="status-text">

@@ -84,7 +84,10 @@ export default function VisualizerRoute() {
       renderedImage: image,
       renderedPath: resolvedItem?.renderedPath,
       timestamp: Date.now(),
-      ownerId: resolvedItem?.ownerId || null,
+      ownerId:
+        visibility === "public"
+          ? resolvedItem?.ownerId || currentUserId || null
+          : resolvedItem?.ownerId || null,
       isPublic: visibility === "public",
     };
     setResolvedItem(updatedItem);

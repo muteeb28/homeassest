@@ -29,6 +29,7 @@ export default function IndexRoute() {
   const fetchHistory = async () => {
     if (!isSignedIn) return;
     setIsLoadingHistory(true);
+
     const items = await getProjects();
     setDesignHistory(items);
     setIsLoadingHistory(false);
@@ -40,22 +41,6 @@ export default function IndexRoute() {
       return;
     }
     fetchHistory();
-  }, [isSignedIn]);
-
-  useEffect(() => {
-    if (!isSignedIn) return;
-    const clearOnLanding = async () => {
-      try {
-        await puter.workers.exec(`${PUTER_WORKER_URL}/api/projects/clear`, {
-          method: "POST",
-        });
-        await fetchHistory();
-      } catch (error) {
-        console.error("Failed to clear projects:", error);
-      }
-    };
-
-    clearOnLanding();
   }, [isSignedIn]);
 
   const handleUploadComplete = async (base64Image: string) => {

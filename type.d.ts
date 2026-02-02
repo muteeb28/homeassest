@@ -95,3 +95,6 @@ type AuthRequiredModalProps = {
   description?: string;
   confirmLabel?: string;
 };
+
+type ShareAction = "share" | "unshare";
+type ShareStatus = "idle" | "saving" | "done";

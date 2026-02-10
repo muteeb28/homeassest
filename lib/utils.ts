@@ -1,5 +1,4 @@
 export const HOSTING_CONFIG_KEY = "roomify_hosting_config";
-export const HOSTING_ROOT_DIR = "roomify/hosting";
 export const HOSTING_DOMAIN_SUFFIX = ".puter.site";
 
 export const isHostedUrl = (value: unknown): value is string =>
@@ -15,23 +14,13 @@ const normalizeHost = (subdomain: string) =>
     ? subdomain
     : `${subdomain}${HOSTING_DOMAIN_SUFFIX}`;
 
-const normalizePath = (value: string) =>
-  value.replace(/^\/+/, "").replace(/\/+$/, "");
-
 export const getHostedUrl = (
-  hosting: { subdomain: string; root_dir: string },
+  hosting: { subdomain: string; },
   filePath: string,
 ): string | null => {
-  if (!hosting?.subdomain || !hosting?.root_dir) return null;
+  if (!hosting?.subdomain) return null;
   const host = normalizeHost(hosting.subdomain);
-  const rootDir = normalizePath(hosting.root_dir);
-  const normalizedFile = normalizePath(filePath);
-  const prefix = rootDir ? `${rootDir}/` : "";
-  const relativePath =
-    prefix && normalizedFile.startsWith(prefix)
-      ? normalizedFile.slice(prefix.length)
-      : normalizedFile;
-  return `https://${host}/${relativePath}`;
+  return `https://${host}/${filePath}`;
 };
 
 export const getImageExtension = (contentType: string, url: string): string => {

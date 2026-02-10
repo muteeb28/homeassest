@@ -2,7 +2,6 @@ import { puter } from "@heyputer/puter.js";
 import { PUTER_WORKER_URL } from "./constants";
 import {
   HOSTING_CONFIG_KEY,
-  HOSTING_ROOT_DIR,
   createHostingSlug,
   fetchBlobFromUrl,
   imageUrlToPngBlob,
@@ -11,27 +10,17 @@ import {
   isHostedUrl,
 } from "./utils";
 
-type HostingConfig = { subdomain: string; root_dir: string };
+type HostingConfig = { subdomain: string; };
 type HostedAsset = { url: string };
 
-const resolveRootDir = (dir: string) => {
-  if (!dir) return dir;
-  if (dir.startsWith("/") || dir.startsWith("~")) return dir;
-  if (puter?.appID) return `~/AppData/${puter.appID}/${dir}`;
-  return `~/${dir}`;
-};
-
 const ensureHosting = async (): Promise<HostingConfig | null> => {
-  if (!puter?.hosting?.create) return null;
-
   try {
     const existing = (await puter.kv.get(
       HOSTING_CONFIG_KEY,
     )) as HostingConfig | null;
-    if (existing?.subdomain && existing?.root_dir) {
+    if (existing?.subdomain) {
       return {
         subdomain: existing.subdomain,
-        root_dir: resolveRootDir(existing.root_dir),
       };
     }
   } catch {
@@ -39,39 +28,12 @@ const ensureHosting = async (): Promise<HostingConfig | null> => {
   }
 
   const subdomain = createHostingSlug();
-  const root_dir = resolveRootDir(HOSTING_ROOT_DIR);
 
   try {
-    await puter.fs.mkdir(root_dir, { recursive: true });
-  } catch {
-    // Best-effort directory creation
-  }
-
-  try {
-    const created = await puter.hosting.create(subdomain, root_dir);
-    const createdSubdomain =
-      created?.subdomain && typeof created.subdomain === "string"
-        ? created.subdomain
-        : subdomain;
-    let createdRootDir =
-      created?.root_dir && typeof created.root_dir === "string"
-        ? created.root_dir
-        : root_dir;
-
-    if (!createdRootDir && createdSubdomain) {
-      try {
-        const fetched = await puter.hosting.get(createdSubdomain);
-        if (fetched?.root_dir && typeof fetched.root_dir === "string") {
-          createdRootDir = fetched.root_dir;
-        }
-      } catch {
-        // Ignore fetch errors
-      }
-    }
+    const created = await puter.hosting.create(subdomain, ".");
 
     const record = {
-      subdomain: createdSubdomain,
-      root_dir: resolveRootDir(createdRootDir),
+      subdomain: created.subdomain,
     };
     try {
       await puter.kv.set(HOSTING_CONFIG_KEY, record);
@@ -82,16 +44,6 @@ const ensureHosting = async (): Promise<HostingConfig | null> => {
   } catch (error) {
     console.warn("Hosting create failed:", error);
     return null;
-  }
-};
-
-const ensureDir = async (dir: string) => {
-  if (!dir) return;
-  try {
-    await puter.fs.mkdir(dir, { recursive: true });
-    return;
-  } catch {
-    // Best-effort directory creation
   }
 };
 
@@ -120,18 +72,16 @@ const storeHostedImage = async ({
 
     const contentType = resolved.contentType || resolved.blob.type || "";
     const ext = getImageExtension(contentType, url);
-    const baseDir = resolveRootDir(hosting.root_dir);
-    const dir = `${baseDir}/projects/${projectId}`;
+    const dir = `projects/${projectId}`;
     const filePath = `${dir}/${label}.${ext}`;
 
-    await ensureDir(dir);
     const uploadFile = new File([resolved.blob], `${label}.${ext}`, {
       type: contentType || "application/octet-stream",
     });
-    await puter.fs.write(filePath, uploadFile);
+    await puter.fs.write(filePath, uploadFile, {createMissingParents: true});
 
     const hostedUrl = getHostedUrl(
-      { subdomain: hosting.subdomain, root_dir: baseDir },
+      { subdomain: hosting.subdomain },
       filePath,
     );
     return hostedUrl ? { url: hostedUrl } : null;

@@ -109,7 +109,7 @@ export const getProjectById = async ({
   ownerId,
 }: {
   id: string;
-  scope?: "user" | "public";
+  scope?: "private" | "public";
   ownerId?: string | null;
 }) => {
   if (!PUTER_WORKER_URL) {

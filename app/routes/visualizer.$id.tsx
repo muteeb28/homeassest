@@ -35,16 +35,22 @@ export default function VisualizerRoute() {
   } = useOutletContext<AuthContext>();
 
   const search = new URLSearchParams(location.search);
-  const queryScope = search.get("source") === "user" ? "user" : "public";
+  const sourceParam = search.get("source");
+  const queryScope: "private" | "public" =
+    sourceParam === "public"
+      ? "public"
+      : sourceParam === "private" || sourceParam === "user"
+        ? "private"
+        : "public";
   const queryOwnerId = search.get("ownerId");
   const isPublicProject = queryScope === "public";
 
   const fetchProjectById = async (
     projectId: string,
-    scope: "user" | "public",
+    scope: "private" | "public",
     ownerId?: string | null,
   ) => {
-    if (scope === "user" && !isSignedIn) {
+    if (scope === "private" && !isSignedIn) {
       const signedIn = await signIn();
       if (!signedIn) return null;
     }

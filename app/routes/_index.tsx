@@ -62,7 +62,7 @@ export default function IndexRoute() {
       return [saved, ...filtered];
     });
 
-    navigate(`/visualizer/${newId}?source=user`, {
+    navigate(`/visualizer/${newId}?source=private`, {
       state: {
         initialImage: saved.sourceImage,
         initialRender: saved.renderedImage || null,
@@ -153,7 +153,7 @@ export default function IndexRoute() {
                     <div
                       key={item.id || `${item.timestamp}-${index}`}
                       onClick={() => {
-                        const scope = item.isPublic ? "public" : "user";
+                        const scope = item.isPublic ? "public" : "private";
                         const ownerParam = item.ownerId
                           ? `&ownerId=${encodeURIComponent(item.ownerId)}`
                           : "";

@@ -10,36 +10,25 @@ import {
   isHostedUrl,
 } from "./utils";
 
-type HostingConfig = { subdomain: string; };
+type HostingConfig = { subdomain: string };
 type HostedAsset = { url: string };
 
 const ensureHosting = async (): Promise<HostingConfig | null> => {
-  try {
-    const existing = (await puter.kv.get(
-      HOSTING_CONFIG_KEY,
-    )) as HostingConfig | null;
-    if (existing?.subdomain) {
-      return {
-        subdomain: existing.subdomain,
-      };
-    }
-  } catch {
-    // Ignore KV errors and fall back to creating hosting
-  }
+  const existing = (await puter.kv.get(
+    HOSTING_CONFIG_KEY,
+  )) as HostingConfig | null;
+
+  if (existing?.subdomain) return { subdomain: existing.subdomain };
 
   const subdomain = createHostingSlug();
 
   try {
     const created = await puter.hosting.create(subdomain, ".");
 
-    const record = {
-      subdomain: created.subdomain,
-    };
-    try {
-      await puter.kv.set(HOSTING_CONFIG_KEY, record);
-    } catch {
-      // Ignore KV errors
-    }
+    const record = { subdomain: created.subdomain };
+
+    await puter.kv.set(HOSTING_CONFIG_KEY, record);
+
     return record;
   } catch (error) {
     console.warn("Hosting create failed:", error);
@@ -52,12 +41,7 @@ const storeHostedImage = async ({
   url,
   projectId,
   label,
-}: {
-  hosting: HostingConfig | null;
-  url: string;
-  projectId: string;
-  label: "source" | "rendered";
-}): Promise<HostedAsset | null> => {
+}: StoreHostedImageParams): Promise<HostedAsset | null> => {
   if (!hosting || !url) return null;
   if (isHostedUrl(url)) return { url };
 
@@ -78,13 +62,10 @@ const storeHostedImage = async ({
     const uploadFile = new File([resolved.blob], `${label}.${ext}`, {
       type: contentType || "application/octet-stream",
     });
-    await puter.fs.mkdir(dir, {createMissingParents: true});
+    await puter.fs.mkdir(dir, { createMissingParents: true });
     await puter.fs.write(filePath, uploadFile);
 
-    const hostedUrl = getHostedUrl(
-      { subdomain: hosting.subdomain },
-      filePath,
-    );
+    const hostedUrl = getHostedUrl({ subdomain: hosting.subdomain }, filePath);
     return hostedUrl ? { url: hostedUrl } : null;
   } catch (error) {
     console.warn("Failed to store hosted image:", error);
@@ -222,6 +203,7 @@ export const saveProject = async (
     publicPath: _publicPath,
     ...rest
   } = item;
+
   const payload = {
     ...rest,
     sourceImage: resolvedSource,

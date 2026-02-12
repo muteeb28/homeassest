@@ -99,3 +99,10 @@ type AuthRequiredModalProps = {
 
 type ShareAction = "share" | "unshare";
 type ShareStatus = "idle" | "saving" | "done";
+
+interface StoreHostedImageParams {
+  hosting: HostingConfig | null;
+  url: string;
+  projectId: string;
+  label: "source" | "rendered";
+}

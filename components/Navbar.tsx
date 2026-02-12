@@ -41,21 +41,19 @@ const Navbar = () => {
         </div>
 
         <div className="actions">
-          {isSignedIn && (
-            <span className="greeting">
-              {userName ? `Hi, ${userName}` : "Signed in"}
-            </span>
-          )}
           {isSignedIn ? (
-            <Button size="sm" onClick={handleAuthClick} className="btn">
-              Log Out
-            </Button>
+            <>
+              <span className="greeting">
+                {userName ? `Hi, ${userName}` : "Signed in"}
+              </span>
+
+              <Button size="sm" onClick={handleAuthClick} className="btn">
+                Log Out
+              </Button>
+            </>
           ) : (
             <>
-              <button
-                onClick={handleAuthClick}
-                className="login"
-              >
+              <button onClick={handleAuthClick} className="login">
                 Log In
               </button>
               <a href="#upload" className="cta">

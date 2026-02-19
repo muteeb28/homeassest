@@ -27,6 +27,8 @@ const Visualizer = ({
   sharedBy = null,
   canUnshare = false,
   isRendering = false,
+  needsPuterSignIn = false,
+  onPuterSignIn,
 }: VisualizerProps) => {
   const { isSignedIn, signIn } = useOutletContext<AuthContext>();
   const [authRequired, setAuthRequired] = useState(false);
@@ -209,6 +211,31 @@ const Visualizer = ({
                         <div className="rendering-status">
                           <div className="pulse-loader"></div>
                           <span>Analyzing Floor Plan...</span>
+                        </div>
+                      </div>
+                    )}
+                    {needsPuterSignIn && !isRendering && (
+                      <div className="render-overlay">
+                        <div className="rendering-status">
+                          <span style={{ marginBottom: 4 }}>Sign in with Puter to generate your 3D render</span>
+                          <p style={{ fontSize: 12, color: "#6b7280", margin: "0 0 16px", textAlign: "center", maxWidth: 260 }}>
+                            Puter provides free AI — you just need a free account.
+                          </p>
+                          <button
+                            onClick={onPuterSignIn}
+                            style={{
+                              background: "#f97316",
+                              color: "#fff",
+                              border: "none",
+                              borderRadius: 8,
+                              padding: "10px 24px",
+                              fontWeight: 600,
+                              fontSize: 14,
+                              cursor: "pointer",
+                            }}
+                          >
+                            Connect Puter Account
+                          </button>
                         </div>
                       </div>
                     )}

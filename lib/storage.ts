@@ -142,13 +142,17 @@ const waitForPuter = (): Promise<void> =>
     }, 100);
   });
 
-const ensurePuterAuth = async (): Promise<void> => {
-  await waitForPuter();
-  if (!puter.auth.isSignedIn()) {
-    console.log("[Render] User not signed into Puter — opening sign-in...");
-    await puter.auth.signIn();
-    console.log("[Render] Puter sign-in complete.");
+export const isPuterSignedIn = (): boolean => {
+  try {
+    return typeof puter !== "undefined" && puter.auth.isSignedIn();
+  } catch {
+    return false;
   }
+};
+
+export const signInToPuter = async (): Promise<void> => {
+  await waitForPuter();
+  await puter.auth.signIn();
 };
 
 const imageElementToBase64 = (img: HTMLImageElement): Promise<string> =>
@@ -170,7 +174,11 @@ export const renderProject = async (
   try {
     console.log(`[Render] Starting 3D render for: ${name || "Untitled"}`);
 
-    await ensurePuterAuth();
+    await waitForPuter();
+    if (!puter.auth.isSignedIn()) {
+      console.log("[Render] Not signed into Puter — sign-in required.");
+      return null;
+    }
 
     const base64Data = image.includes(",") ? image.split(",")[1] : image;
     const mimeType: string = image.startsWith("data:image/png")

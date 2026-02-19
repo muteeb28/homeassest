@@ -191,6 +191,106 @@
     }
   }
 
+  .sign-in-modal {
+    @apply fixed inset-0 z-60 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4;
+
+    .panel {
+      @apply bg-white rounded-xl shadow-2xl max-w-md w-full p-6 text-center border border-zinc-200;
+
+      .icon {
+        @apply w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4;
+
+        .alert {
+          @apply text-primary w-6 h-6;
+        }
+      }
+
+      h3 {
+        @apply text-xl font-serif font-bold text-black mb-2;
+      }
+
+      >p {
+        @apply text-zinc-600 text-sm mb-6 leading-relaxed;
+      }
+
+      .form {
+        @apply flex flex-col space-y-4;
+
+        .input {
+          @apply w-full px-4 py-3 rounded-lg border border-zinc-200 bg-zinc-50 text-sm text-black placeholder-zinc-400 outline-none transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:bg-white;
+        }
+
+        .error {
+          @apply text-red-500 text-xs text-left;
+        }
+
+        .actions {
+          @apply flex flex-col space-y-3;
+
+          .confirm {
+            @apply bg-primary hover:bg-orange-600 text-white;
+          }
+
+          .toggle {
+            @apply text-xs text-zinc-500 hover:text-primary transition-colors cursor-pointer;
+          }
+
+          .cancel {
+            @apply text-xs text-zinc-400 hover:text-black cursor-pointer;
+          }
+        }
+      }
+    }
+  }
+
+  .confirm-modal {
+    @apply fixed inset-0 z-60 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4;
+
+    .panel {
+      @apply bg-white rounded-xl shadow-2xl max-w-md w-full p-6 text-center border border-zinc-200;
+
+      .icon {
+        @apply w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4;
+
+        .alert {
+          @apply text-primary w-6 h-6;
+        }
+
+        &.destructive {
+          @apply bg-red-100;
+
+          .alert {
+            @apply text-red-500;
+          }
+        }
+      }
+
+      h3 {
+        @apply text-xl font-serif font-bold text-black mb-2;
+      }
+
+      p {
+        @apply text-zinc-600 text-sm mb-6 leading-relaxed;
+      }
+
+      .actions {
+        @apply flex flex-col space-y-3;
+
+        .confirm {
+          @apply bg-primary hover:bg-orange-600 text-white;
+
+          &.destructive {
+            @apply bg-red-500 hover:bg-red-600;
+          }
+        }
+
+        .cancel {
+          @apply text-xs text-zinc-400 hover:text-black mt-2 cursor-pointer;
+        }
+      }
+    }
+  }
+
   .upload {
     @apply w-full;
 
@@ -206,7 +306,15 @@
       }
 
       .drop-input {
-        @apply absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10;
+        @apply absolute inset-0 w-full h-full opacity-0 cursor-pointer z-[11];
+      }
+
+      .upload-error-banner {
+        @apply absolute top-0 left-0 w-full bg-red-100 border-b border-red-200 py-2 px-4 z-20 flex items-center justify-center;
+
+        p {
+          @apply text-red-700 text-xs font-semibold;
+        }
       }
 
       .drop-content {
@@ -338,38 +446,12 @@
           @apply w-full h-full object-contain transition-all duration-700 opacity-100 scale-100;
         }
 
-        &.is-processing {
-          .render-img {
-            @apply opacity-50 blur-sm scale-105;
-          }
-        }
-
         .render-placeholder {
           @apply w-full h-full flex items-center justify-center;
         }
 
         .render-fallback {
           @apply w-full h-full object-contain opacity-50;
-        }
-
-        .render-overlay {
-          @apply absolute inset-0 flex flex-col items-center justify-center z-30 bg-white/60 backdrop-blur-sm transition-opacity duration-300;
-
-          .rendering-card {
-            @apply bg-white px-6 py-4 rounded-xl border border-zinc-200 flex flex-col items-center shadow-2xl;
-
-            .spinner {
-              @apply w-8 h-8 mb-3 animate-spin text-primary;
-            }
-
-            .title {
-              @apply text-sm font-bold text-black;
-            }
-
-            .subtitle {
-              @apply text-xs text-zinc-500 mt-1;
-            }
-          }
         }
       }
 
@@ -524,6 +606,10 @@
                   @apply text-[10px] font-bold uppercase tracking-wider text-zinc-800;
                 }
               }
+
+              .delete-btn {
+                @apply absolute top-3 right-3 w-8 h-8 rounded-full bg-white/90 backdrop-blur-md border border-zinc-200 shadow-sm flex items-center justify-center text-zinc-400 opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-red-50 hover:text-red-500 hover:border-red-200 z-10 cursor-pointer;
+              }
             }
 
             .card-body {
@@ -558,6 +644,296 @@
       }
     }
 
+    /* ── Pagination ── */
+    .pagination {
+      @apply flex items-center justify-center gap-4 mt-10;
+
+      .page-btn {
+        @apply w-9 h-9 rounded-full border border-zinc-200 bg-white flex items-center justify-center text-zinc-500 hover:bg-zinc-50 hover:text-black transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed;
+      }
+
+      .page-info {
+        @apply text-sm font-mono text-zinc-500 min-w-12 text-center;
+      }
+    }
+
+    /* ── Design Gallery ── */
+    .gallery-section {
+      @apply py-20 bg-background border-b border-zinc-100;
+
+      .section-inner {
+        @apply max-w-7xl mx-auto px-6;
+
+        .section-head {
+          @apply mb-12;
+
+          .copy {
+            h2 {
+              @apply text-4xl font-serif text-black mb-3;
+            }
+            p {
+              @apply text-zinc-500 text-lg;
+            }
+          }
+        }
+      }
+
+      .gallery-category {
+        @apply mb-14;
+      }
+
+      .gallery-meta {
+        @apply flex items-center justify-between mb-5;
+
+        h3 {
+          @apply text-2xl font-serif font-bold text-black;
+        }
+
+        .see-all {
+          @apply text-sm font-semibold text-primary cursor-pointer hover:underline tracking-wide;
+        }
+      }
+
+      .gallery-row-wrapper {
+        @apply relative flex items-center;
+      }
+
+      .gallery-arrow {
+        @apply absolute z-10 w-10 h-10 rounded-full bg-white border border-zinc-200 shadow-lg flex items-center justify-center text-zinc-600 hover:text-black hover:shadow-xl transition-all duration-200 flex-shrink-0;
+
+        &.left {
+          @apply -left-5;
+        }
+
+        &.right {
+          @apply -right-5;
+        }
+      }
+
+      .gallery-row {
+        @apply flex gap-5 overflow-x-auto scroll-smooth pb-2 w-full;
+        scrollbar-width: none;
+
+        &::-webkit-scrollbar {
+          display: none;
+        }
+      }
+
+      /* ── Product Card ── */
+      .gallery-card {
+        @apply flex-shrink-0 w-60 rounded-2xl overflow-hidden bg-white border border-zinc-200 shadow-sm cursor-pointer transition-all duration-300;
+
+        &:hover {
+          @apply shadow-xl -translate-y-1;
+        }
+
+        .gallery-img-wrap {
+          @apply relative overflow-hidden;
+          height: 180px;
+
+          img {
+            @apply w-full h-full object-cover transition-transform duration-500 group-hover:scale-105;
+          }
+
+          .gallery-hover-cta {
+            @apply absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300;
+
+            span {
+              @apply bg-white text-black text-xs font-bold uppercase tracking-wider px-4 py-2 rounded-full shadow-md;
+            }
+
+          }
+        }
+
+        .gallery-info {
+          @apply px-4 pt-3 pb-4 flex flex-col gap-1.5;
+        }
+
+        .gallery-room-tag {
+          @apply inline-block w-fit bg-orange-50 text-primary text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded border border-orange-100;
+        }
+
+        .gallery-title {
+          @apply text-sm font-serif font-bold text-zinc-900 leading-snug line-clamp-1;
+        }
+
+        .gallery-meta-row {
+          @apply flex items-center gap-1.5 text-xs text-zinc-400;
+
+          .gallery-style {
+            @apply text-zinc-500 font-medium;
+          }
+
+          .gallery-dot {
+            @apply text-zinc-300;
+          }
+
+          .gallery-dims {
+            @apply font-mono text-[11px];
+          }
+        }
+
+        .gallery-rating {
+          @apply flex items-center gap-1 text-xs text-orange-400 mt-0.5;
+
+          span {
+            @apply text-zinc-400 text-[11px] font-mono ml-1;
+          }
+        }
+      }
+    }
+
+    /* ── Interior Solutions ── */
+    .solutions-section {
+      @apply py-20 bg-white border-b border-zinc-100;
+
+      .section-inner {
+        @apply max-w-7xl mx-auto px-6 text-center;
+
+        h2 {
+          @apply text-4xl font-serif text-black mb-3;
+        }
+
+        .solutions-sub {
+          @apply text-zinc-500 text-lg mb-12;
+        }
+      }
+
+      .solutions-grid {
+        @apply grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-6 mb-12;
+      }
+
+      .solution-item {
+        @apply flex flex-col items-center gap-2 cursor-pointer;
+
+        .solution-icon {
+          @apply w-14 h-14 rounded-xl border border-zinc-200 bg-zinc-50 flex items-center justify-center text-zinc-600 group-hover:border-primary group-hover:text-primary group-hover:bg-orange-50 transition-all duration-200;
+        }
+
+        span {
+          @apply text-xs font-medium text-zinc-600 text-center group-hover:text-primary transition-colors;
+        }
+      }
+
+      .solutions-cta {
+        @apply flex justify-center;
+      }
+    }
+
+    /* ── Testimonials ── */
+    .testimonials-section {
+      @apply py-20 bg-background border-b border-zinc-100;
+
+      .section-inner {
+        @apply max-w-7xl mx-auto px-6 text-center;
+
+        h2 {
+          @apply text-4xl font-serif text-black mb-3;
+        }
+
+        .testimonials-sub {
+          @apply text-zinc-500 text-lg mb-12;
+        }
+      }
+
+      .testimonials-grid {
+        @apply grid grid-cols-1 md:grid-cols-3 gap-8;
+      }
+
+      .testimonial-card {
+        @apply bg-white rounded-2xl border border-zinc-200 p-8 text-left shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col gap-4;
+
+        .testimonial-avatar {
+          @apply w-12 h-12 rounded-full bg-primary text-white flex items-center justify-center text-lg font-serif font-bold flex-shrink-0;
+        }
+
+        .testimonial-quote {
+          @apply text-zinc-700 text-sm leading-relaxed italic flex-1;
+        }
+
+        .testimonial-meta {
+          @apply flex flex-col gap-0.5 border-t border-zinc-100 pt-4;
+
+          strong {
+            @apply text-sm font-semibold text-black;
+          }
+
+          span {
+            @apply text-xs text-zinc-400 font-mono uppercase;
+          }
+        }
+      }
+    }
+
+    /* ── FAQ ── */
+    .faq-section {
+      @apply py-20 bg-white border-b border-zinc-100;
+
+      .section-inner {
+        @apply max-w-3xl mx-auto px-6;
+
+        h2 {
+          @apply text-4xl font-serif text-black mb-10 text-center;
+        }
+      }
+
+      .faq-list {
+        @apply flex flex-col divide-y divide-zinc-100;
+      }
+
+      .faq-item {
+        @apply py-0;
+
+        &.open .faq-answer {
+          max-height: 300px;
+          @apply py-4;
+        }
+
+        &.open .faq-chevron {
+          @apply rotate-180;
+        }
+      }
+
+      .faq-question {
+        @apply w-full flex items-center justify-between py-5 text-left text-base font-medium text-zinc-900 hover:text-primary transition-colors cursor-pointer;
+
+        .faq-chevron {
+          @apply text-zinc-400 flex-shrink-0 transition-transform duration-200;
+        }
+      }
+
+      .faq-answer {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease, padding 0.2s ease;
+
+        p {
+          @apply text-sm text-zinc-600 leading-relaxed pb-2;
+        }
+      }
+    }
+
+    /* ── CTA Banner ── */
+    .cta-banner {
+      @apply py-20 bg-zinc-900;
+
+      .section-inner {
+        @apply max-w-3xl mx-auto px-6 text-center flex flex-col items-center gap-6;
+
+        h2 {
+          @apply text-4xl font-serif text-white;
+        }
+
+        p {
+          @apply text-zinc-400 text-lg;
+        }
+
+        .btn--primary {
+          @apply mt-2;
+        }
+      }
+    }
+
     .partners {
       @apply border-t border-zinc-200 py-12 bg-white;
 
@@ -588,6 +964,231 @@
 
     &.loading {
       @apply text-sm text-zinc-500;
+    }
+  }
+
+  /* Rendering Overlay & Animations */
+  .relative-container {
+    @apply relative w-full h-full;
+  }
+
+  .render-overlay {
+    @apply absolute inset-0 z-20 flex items-center justify-center bg-white/60 backdrop-blur-[2px] transition-all duration-500;
+  }
+
+  .rendering-status {
+    @apply flex flex-col items-center space-y-4 p-8 rounded-2xl bg-white shadow-2xl border border-zinc-100;
+
+    span {
+      @apply text-sm font-serif font-bold text-black tracking-wide;
+    }
+  }
+
+  .pulse-loader {
+    @apply w-12 h-12 rounded-full border-4 border-primary/20 border-t-primary animate-spin mb-2;
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    from {
+      transform: rotate(0deg);
+    }
+
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .rendering-status span {
+    animation: text-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  @keyframes text-pulse {
+
+    0%,
+    100% {
+      opacity: 1;
+    }
+
+    50% {
+      opacity: .5;
+    }
+  }
+
+  /* ── PDP (Product Detail Page) ── */
+  .pdp-page {
+    @apply min-h-screen bg-background;
+
+    .pdp-breadcrumb {
+      @apply flex items-center gap-1.5 px-6 pt-6 pb-0 max-w-7xl mx-auto text-xs text-zinc-400;
+
+      .pdp-breadcrumb-link {
+        @apply cursor-pointer hover:text-primary transition-colors;
+      }
+
+      .pdp-breadcrumb-sep {
+        @apply text-zinc-300;
+      }
+
+      .pdp-breadcrumb-current {
+        @apply text-zinc-600 font-medium truncate max-w-xs;
+      }
+    }
+
+    .pdp-back {
+      @apply flex items-center gap-1.5 px-6 mt-4 mb-2 max-w-7xl mx-auto text-sm text-zinc-500 hover:text-black transition-colors cursor-pointer bg-transparent border-0 p-0;
+    }
+
+    .pdp-main {
+      @apply max-w-7xl mx-auto px-6 py-8 flex flex-col lg:flex-row gap-12;
+    }
+
+    /* ── Image column ── */
+    .pdp-image-col {
+      @apply flex-shrink-0 lg:w-[55%];
+
+      .pdp-image-hero {
+        @apply rounded-2xl overflow-hidden border border-zinc-200 shadow-sm bg-zinc-50;
+
+        img {
+          @apply w-full h-auto object-cover max-h-[520px];
+        }
+      }
+    }
+
+    /* ── Details column ── */
+    .pdp-details-col {
+      @apply flex flex-col gap-4 flex-1;
+
+      .pdp-room-tag {
+        @apply inline-block w-fit bg-orange-50 text-primary text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded border border-orange-100;
+      }
+
+      .pdp-title {
+        @apply text-3xl font-serif text-zinc-900 leading-tight;
+      }
+
+      .pdp-meta-row {
+        @apply flex items-center gap-2 text-sm text-zinc-500;
+
+        .pdp-style {
+          @apply font-medium text-zinc-700;
+        }
+
+        .pdp-dot {
+          @apply text-zinc-300;
+        }
+
+        .pdp-dims {
+          @apply font-mono text-[12px] text-zinc-500;
+        }
+      }
+
+      .pdp-rating {
+        @apply flex items-center gap-1;
+
+        .star-filled {
+          @apply text-orange-400;
+        }
+
+        .star-empty {
+          @apply text-zinc-200;
+        }
+
+        .pdp-rating-value {
+          @apply text-sm font-bold text-zinc-800 ml-1;
+        }
+
+        .pdp-rating-count {
+          @apply text-xs text-zinc-400;
+        }
+      }
+
+      .pdp-description {
+        @apply text-sm text-zinc-600 leading-relaxed border-t border-zinc-100 pt-4;
+      }
+
+      .pdp-features {
+        @apply border-t border-zinc-100 pt-4;
+
+        h3 {
+          @apply text-xs font-bold uppercase tracking-widest text-zinc-400 mb-3;
+        }
+
+        ul {
+          @apply flex flex-col gap-2;
+
+          li {
+            @apply flex items-start gap-2 text-sm text-zinc-700;
+
+            .pdp-feature-icon {
+              @apply text-primary flex-shrink-0 mt-0.5;
+            }
+          }
+        }
+      }
+
+      .pdp-actions {
+        @apply flex flex-col sm:flex-row gap-3 border-t border-zinc-100 pt-5;
+
+        .pdp-cta-primary {
+          @apply bg-primary text-white hover:bg-orange-600;
+        }
+
+        .pdp-cta-secondary {
+          @apply border-zinc-300 text-zinc-700 hover:border-zinc-400;
+        }
+      }
+
+      .pdp-note {
+        @apply text-xs text-zinc-400 text-center sm:text-left;
+      }
+    }
+
+    /* ── Related designs ── */
+    .pdp-related {
+      @apply border-t border-zinc-100 py-16 bg-white mt-8;
+
+      .pdp-related-inner {
+        @apply max-w-7xl mx-auto px-6;
+
+        h2 {
+          @apply text-2xl font-serif text-zinc-900 mb-8;
+        }
+      }
+
+      .pdp-related-grid {
+        @apply grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6;
+      }
+
+      .pdp-related-card {
+        @apply rounded-xl overflow-hidden border border-zinc-200 bg-white shadow-sm cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-md;
+
+        .pdp-related-img {
+          @apply overflow-hidden;
+          height: 160px;
+
+          img {
+            @apply w-full h-full object-cover transition-transform duration-500 hover:scale-105;
+          }
+        }
+
+        .pdp-related-info {
+          @apply px-4 pt-3 pb-4 flex flex-col gap-1;
+
+          .pdp-related-room {
+            @apply text-[10px] font-bold uppercase tracking-widest text-primary;
+          }
+
+          h4 {
+            @apply text-sm font-serif font-bold text-zinc-900 leading-snug line-clamp-1;
+          }
+
+          .pdp-related-sub {
+            @apply flex items-center gap-1.5 text-xs text-zinc-400;
+          }
+        }
+      }
     }
   }
 }

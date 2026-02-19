@@ -1,4 +1,9 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import type {
+  AuthContext,
+  DesignHistoryItem,
+  VisualizerLocationState,
+} from "../../type";
 import {
   Navigate,
   useLocation,
@@ -9,10 +14,11 @@ import {
 
 import {
   getProjectById,
+  renderProject,
   saveProject,
   shareProject,
   unshareProject,
-} from "@/lib/puter.action";
+} from "@/lib/storage";
 
 import Visualizer from "@/components/Visualizer";
 
@@ -28,6 +34,7 @@ export default function VisualizerRoute() {
   const [selectedInitialRender, setSelectedInitialRender] = useState<
     string | null
   >(null);
+  const [isRendering, setIsRendering] = useState(false);
   const {
     userId: currentUserId,
     isSignedIn,
@@ -50,40 +57,14 @@ export default function VisualizerRoute() {
     scope: "private" | "public",
     ownerId?: string | null,
   ) => {
+    /*
     if (scope === "private" && !isSignedIn) {
       const signedIn = await signIn();
       if (!signedIn) return null;
     }
+    */
 
     return await getProjectById({ id: projectId, scope, ownerId });
-  };
-
-  const handleRenderComplete = async (payload: {
-    renderedImage: string;
-    renderedPath?: string;
-  }) => {
-    if (!id) return;
-    const sourceImage = resolvedItem?.sourceImage || uploadedImage || "";
-    const updatedItem = {
-      id,
-      name: resolvedItem?.name || `Residence ${id}`,
-      sourceImage,
-      renderedImage: payload.renderedImage,
-      renderedPath: payload.renderedPath,
-      timestamp: Date.now(),
-      ownerId: resolvedItem?.ownerId || null,
-      isPublic: resolvedItem?.isPublic || false,
-    };
-    setResolvedItem(updatedItem);
-    const saved = await saveProject(
-      updatedItem,
-      updatedItem.isPublic ? "public" : "private",
-    );
-    if (saved) {
-      setResolvedItem(saved);
-      if (saved.sourceImage) setUploadedImage(saved.sourceImage);
-      if (saved.renderedImage) setSelectedInitialRender(saved.renderedImage);
-    }
   };
 
   const handleShareCurrent = async (
@@ -149,10 +130,22 @@ export default function VisualizerRoute() {
       setIsResolving(true);
       const fetched = await fetchProjectById(id, queryScope, queryOwnerId);
       if (cancelled) return;
+
       if (fetched) {
         setResolvedItem(fetched);
         setUploadedImage(fetched.sourceImage || null);
         setSelectedInitialRender(fetched.renderedImage || null);
+
+        // Trigger rendering if there's no rendered image and it's a private project
+        if (!fetched.renderedImage && queryScope === "private" && fetched.sourceImage) {
+          setIsRendering(true);
+          const rendered = await renderProject(fetched.id, fetched.sourceImage, fetched.name || undefined);
+          if (!cancelled && rendered) {
+            setSelectedInitialRender(rendered);
+            setResolvedItem(prev => prev ? ({ ...prev, renderedImage: rendered }) : null);
+          }
+          setIsRendering(false);
+        }
       }
       setIsResolving(false);
     };
@@ -190,17 +183,16 @@ export default function VisualizerRoute() {
     <Visualizer
       onBack={() => navigate("/")}
       initialImage={effectiveInitialImage}
-      onRenderComplete={handleRenderComplete}
       onShare={(image) => handleShareCurrent(image, { visibility: "public" })}
       onUnshare={(image) =>
         handleShareCurrent(image, { visibility: "private" })
       }
       projectName={resolvedName}
-      projectId={id}
       initialRender={effectiveInitialRender}
       isPublic={resolvedIsPublic}
       sharedBy={resolvedItem?.sharedBy || null}
       canUnshare={canUnshare}
+      isRendering={isRendering}
     />
   );
 }

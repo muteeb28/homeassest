@@ -1,31 +1,34 @@
 import { useEffect, useRef, useState } from "react";
-import { Box, Download, RefreshCw, Share2, X } from "lucide-react";
+import { Box, Download, Share2, X } from "lucide-react";
 import {
   ReactCompareSlider,
   ReactCompareSliderImage,
 } from "react-compare-slider";
 import { useOutletContext } from "react-router";
 
+import type {
+  AuthContext,
+  ShareAction,
+  ShareStatus,
+  VisualizerProps,
+} from "../type";
+
 import { Button } from "./ui/Button";
 import AuthRequiredModal from "./AuthRequiredModal";
-
-import { generate3DView } from "@/lib/ai.action";
 
 const Visualizer = ({
   onBack,
   initialImage,
-  onRenderComplete,
   onShare,
   onUnshare,
   projectName,
-  projectId,
   initialRender,
   isPublic = false,
   sharedBy = null,
   canUnshare = false,
+  isRendering = false,
 }: VisualizerProps) => {
   const { isSignedIn, signIn } = useOutletContext<AuthContext>();
-  const [isProcessing, setIsProcessing] = useState(false);
   const [authRequired, setAuthRequired] = useState(false);
   const [currentImage, setCurrentImage] = useState<string | null>(
     initialRender || null,
@@ -40,7 +43,7 @@ const Visualizer = ({
 
     const link = document.createElement("a");
     link.href = currentImage;
-    link.download = `roomify-render-${Date.now()}.png`;
+    link.download = `homeasset-render-${Date.now()}.png`;
 
     document.body.appendChild(link);
     link.click();
@@ -49,7 +52,7 @@ const Visualizer = ({
   };
 
   const handleShareToggle = async () => {
-    if (!currentImage || isProcessing) return;
+    if (!currentImage) return;
     if (!isSignedIn) {
       setAuthRequired(true);
       return;
@@ -81,43 +84,6 @@ const Visualizer = ({
     }
   };
 
-  const runGeneration = async () => {
-    if (!initialImage) return;
-
-    setAuthRequired(false);
-
-    try {
-      if (!isSignedIn) {
-        setAuthRequired(true);
-        return;
-      }
-
-      setIsProcessing(true);
-
-      const result = await generate3DView({
-        sourceImage: initialImage,
-        projectId,
-      });
-
-      if (result.renderedImage) {
-        setCurrentImage(result.renderedImage);
-        if (onRenderComplete) {
-          onRenderComplete({
-            renderedImage: result.renderedImage,
-            renderedPath: result.renderedPath,
-          });
-        }
-      }
-    } catch (error: any) {
-      console.error("Generation failed:", error);
-      if (error?.status === 401 || error?.status === 403) {
-        setAuthRequired(true);
-      }
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
   const isReadOnlyShared = isPublic && !canUnshare;
 
   const getShareLabel = () => {
@@ -138,19 +104,15 @@ const Visualizer = ({
     if (!initialImage || hasInitialGenerated.current) return;
     if (initialRender) {
       setCurrentImage(initialRender);
-      hasInitialGenerated.current = true;
-      return;
     }
-
     hasInitialGenerated.current = true;
-    runGeneration();
   }, [initialImage, initialRender]);
 
   useEffect(() => {
-    if (!initialRender || isProcessing) return;
+    if (!initialRender) return;
     if (initialRender === currentImage) return;
     setCurrentImage(initialRender);
-  }, [currentImage, initialRender, isProcessing]);
+  }, [currentImage, initialRender]);
 
   return (
     <div className="visualizer">
@@ -160,31 +122,27 @@ const Visualizer = ({
           try {
             const signedIn = await signIn();
             if (!signedIn) return;
-
             setAuthRequired(false);
-            if (!currentImage && initialImage) {
-              hasInitialGenerated.current = true;
-              runGeneration();
-            }
           } catch (error) {
-            console.error("Puter sign-in failed:", error);
+            console.error("Sign-in failed:", error);
           }
         }}
         onCancel={() => {
           setAuthRequired(false);
-          setIsProcessing(false);
         }}
-        description="Sign in with your Puter account to generate and share visualizations."
+        description="Sign in to share visualizations."
       />
 
       <nav className="topbar">
         <div className="brand" onClick={onBack}>
           <Box className="logo" />
-          <span className="name">Roomify</span>
+          <span className="name">HomeAsset</span>
         </div>
-        <Button variant="ghost" size="sm" onClick={onBack} className="exit">
-          <X className="icon" /> Exit Editor
-        </Button>
+        <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+          <Button variant="ghost" size="sm" onClick={onBack} className="exit">
+            <X className="icon" /> Exit Editor
+          </Button>
+        </div>
       </nav>
 
       <div className="content">
@@ -214,7 +172,6 @@ const Visualizer = ({
                 className="share"
                 disabled={
                   !currentImage ||
-                  isProcessing ||
                   shareStatus === "saving" ||
                   (isPublic ? !onUnshare || !canUnshare : !onShare)
                 }
@@ -225,30 +182,38 @@ const Visualizer = ({
             </div>
           </div>
 
-          <div className={`render-area ${isProcessing ? "is-processing" : ""}`}>
+          <div className="render-area">
             {currentImage ? (
-              <img src={currentImage} alt="AI Render" className="render-img" />
+              <div className="relative-container">
+                <img src={currentImage} alt="Render" className="render-img" />
+                {isRendering && (
+                  <div className="render-overlay">
+                    <div className="rendering-status">
+                      <div className="pulse-loader"></div>
+                      <span>Rendering 3D Model...</span>
+                    </div>
+                  </div>
+                )}
+              </div>
             ) : (
               <div className="render-placeholder">
                 {initialImage && (
-                  <img
-                    src={initialImage}
-                    alt="Original"
-                    className="render-fallback"
-                  />
+                  <div className="relative-container">
+                    <img
+                      src={initialImage}
+                      alt="Original"
+                      className="render-fallback"
+                    />
+                    {isRendering && (
+                      <div className="render-overlay">
+                        <div className="rendering-status">
+                          <div className="pulse-loader"></div>
+                          <span>Analyzing Floor Plan...</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 )}
-              </div>
-            )}
-
-            {isProcessing && (
-              <div className="render-overlay">
-                <div className="rendering-card">
-                  <RefreshCw className="spinner" />
-                  <span className="title">Rendering…</span>
-                  <span className="subtitle">
-                    Generating your 3D visualization
-                  </span>
-                </div>
               </div>
             )}
           </div>
@@ -264,7 +229,7 @@ const Visualizer = ({
           </div>
 
           <div className="compare-stage">
-            {initialImage && currentImage ? (
+            {initialImage && currentImage && !isRendering ? (
               <ReactCompareSlider
                 defaultValue={50}
                 style={{ width: "100%", height: "auto" }}
@@ -286,11 +251,21 @@ const Visualizer = ({
             ) : (
               <div className="compare-fallback">
                 {initialImage && (
-                  <img
-                    src={initialImage}
-                    alt="Before"
-                    className="compare-img"
-                  />
+                  <div className="relative-container">
+                    <img
+                      src={initialImage}
+                      alt="Before"
+                      className="compare-img"
+                    />
+                    {isRendering && (
+                      <div className="render-overlay">
+                        <div className="rendering-status">
+                          <div className="pulse-loader"></div>
+                          <span>Generating Comparison...</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
             )}

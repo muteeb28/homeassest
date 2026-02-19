@@ -1,3 +1,5 @@
+import type React from "react";
+
 interface Material {
   id: string;
   name: string;
@@ -6,7 +8,7 @@ interface Material {
   category: "floor" | "wall" | "furniture";
 }
 
-interface DesignHistoryItem {
+export interface DesignHistoryItem {
   id: string;
   name?: string | null;
   sourceImage: string;
@@ -21,25 +23,25 @@ interface DesignHistoryItem {
   isPublic?: boolean;
 }
 
-interface DesignConfig {
+export interface DesignConfig {
   floor: string;
   walls: string;
   style: string;
 }
 
-enum AppStatus {
+export enum AppStatus {
   IDLE = "IDLE",
   UPLOADING = "UPLOADING",
   PROCESSING = "PROCESSING",
   READY = "READY",
 }
 
-type RenderCompletePayload = {
+export type RenderCompletePayload = {
   renderedImage: string;
   renderedPath?: string;
 };
 
-type VisualizerLocationState = {
+export type VisualizerLocationState = {
   initialImage?: string;
   initialRender?: string | null;
   ownerId?: string | null;
@@ -47,39 +49,39 @@ type VisualizerLocationState = {
   sharedBy?: string | null;
 };
 
-interface VisualizerProps {
+export interface VisualizerProps {
   onBack: () => void;
   initialImage: string | null;
-  onRenderComplete?: (payload: RenderCompletePayload) => void;
   onShare?: (image: string) => Promise<void> | void;
   onUnshare?: (image: string) => Promise<void> | void;
   projectName?: string;
-  projectId?: string;
   initialRender?: string | null;
   isPublic?: boolean;
   sharedBy?: string | null;
   canUnshare?: boolean;
+  isRendering?: boolean;
 }
 
-interface UploadProps {
+export interface UploadProps {
   onComplete: (base64File: string) => Promise<boolean | void> | boolean | void;
   className?: string;
 }
 
-interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  children?: React.ReactNode;
   variant?: "primary" | "secondary" | "ghost" | "outline";
   size?: "sm" | "md" | "lg";
   fullWidth?: boolean;
 }
 
-interface CardProps {
+export interface CardProps {
   children: React.ReactNode;
   className?: string;
   title?: string;
   action?: React.ReactNode;
 }
 
-type AuthContext = {
+export type AuthContext = {
   isSignedIn: boolean;
   userName: string | null;
   userId: string | null;
@@ -88,7 +90,7 @@ type AuthContext = {
   signOut: () => Promise<boolean>;
 };
 
-type AuthRequiredModalProps = {
+export type AuthRequiredModalProps = {
   isOpen: boolean;
   onConfirm: () => void;
   onCancel: () => void;
@@ -97,12 +99,21 @@ type AuthRequiredModalProps = {
   confirmLabel?: string;
 };
 
+export type SignInModalProps = {
+  isOpen: boolean;
+  onSuccess: () => void;
+  onCancel: () => void;
+};
+
+export type ConfirmModalProps = {
+  isOpen: boolean;
+  onConfirm: () => void;
+  onCancel: () => void;
+  title?: string;
+  description?: string;
+  confirmLabel?: string;
+  variant?: "default" | "destructive";
+};
+
 type ShareAction = "share" | "unshare";
 type ShareStatus = "idle" | "saving" | "done";
-
-interface StoreHostedImageParams {
-  hosting: HostingConfig | null;
-  url: string;
-  projectId: string;
-  label: "source" | "rendered";
-}

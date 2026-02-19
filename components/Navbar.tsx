@@ -1,6 +1,8 @@
 import { useOutletContext } from "react-router";
 import { Box } from "lucide-react";
 
+import type { AuthContext } from "../type";
+
 import { Button } from "./ui/Button";
 
 const Navbar = () => {
@@ -12,7 +14,7 @@ const Navbar = () => {
       try {
         await signOut();
       } catch (error) {
-        console.error("Puter sign-out failed:", error);
+        console.error("Sign-out failed:", error);
       }
       return;
     }
@@ -20,7 +22,7 @@ const Navbar = () => {
     try {
       await signIn();
     } catch (error) {
-      console.error("Puter sign-in failed:", error);
+      console.error("Sign-in failed:", error);
     }
   };
 
@@ -30,13 +32,13 @@ const Navbar = () => {
         <div className="left">
           <div className="brand">
             <Box className="logo" strokeWidth={2.5} />
-            <span className="name">Roomify</span>
+            <span className="name">HomeAsset</span>
           </div>
           <div className="links">
-            <a href="#">Product</a>
-            <a href="#">Pricing</a>
-            <a href="#">Community</a>
-            <a href="#">Enterprise</a>
+            <a href="#">Designs</a>
+            <a href="#">Services</a>
+            <a href="#">How It Works</a>
+            <a href="#">Get Estimate</a>
           </div>
         </div>
 

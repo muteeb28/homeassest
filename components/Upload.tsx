@@ -9,8 +9,8 @@ import { useOutletContext } from "react-router";
 const Upload = ({ onComplete, className = "" }: UploadProps) => {
   const [isDragging, setIsDragging] = useState(false);
   const [file, setFile] = useState<File | null>(null);
-
   const [progress, setProgress] = useState(0);
+  const [error, setError] = useState<string | null>(null);
 
   const { isSignedIn } = useOutletContext<AuthContext>();
 
@@ -24,17 +24,19 @@ const Upload = ({ onComplete, className = "" }: UploadProps) => {
   const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
-    if (!isSignedIn) return;
+    // if (!isSignedIn) return;
 
     if (e.dataTransfer.files && e.dataTransfer.files[0])
       processFile(e.dataTransfer.files[0]);
   };
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    /*
     if (!isSignedIn) {
       e.currentTarget.value = "";
       return;
     }
+    */
 
     if (e.target.files && e.target.files[0]) processFile(e.target.files[0]);
   };
@@ -42,6 +44,7 @@ const Upload = ({ onComplete, className = "" }: UploadProps) => {
   const processFile = (selectedFile: File) => {
     setFile(selectedFile);
     setProgress(0);
+    setError(null);
 
     // Convert to Base64
     const reader = new FileReader();
@@ -64,11 +67,13 @@ const Upload = ({ onComplete, className = "" }: UploadProps) => {
                   if (outcome === false) {
                     setFile(null);
                     setProgress(0);
+                    setError("Failed to process the image. Please try again or check your configuration.");
                   }
-                } catch (error) {
-                  console.error("Upload failed:", error);
+                } catch (err) {
+                  console.error("Upload failed:", err);
                   setFile(null);
                   setProgress(0);
+                  setError("An unexpected error occurred during upload.");
                 }
               })();
             }, 600);
@@ -95,18 +100,21 @@ const Upload = ({ onComplete, className = "" }: UploadProps) => {
             type="file"
             className="drop-input"
             onChange={handleFileSelect}
-            accept=".jpg,.jpeg,.png"
-            disabled={!isSignedIn}
+            accept=".jpg,.jpeg,.png,.webp"
           />
+
+          {error && (
+            <div className="upload-error-banner">
+              <p>{error}</p>
+            </div>
+          )}
 
           <div className="drop-content">
             <div className="drop-icon">
               <UploadIcon size={20} />
             </div>
             <p>
-              {isSignedIn
-                ? "Click to upload or drag and drop"
-                : "Sign in or sign up with Puter to upload"}
+              Click to upload or drag and drop
             </p>
             <p className="help">Maximum file size 50 MB.</p>
           </div>

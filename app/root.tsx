@@ -16,6 +16,23 @@ function usePuterScript() {
   }, []);
 }
 
+export function HydrateFallback() {
+  return (
+    <html lang="en">
+      <head>
+        <meta charSet="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>HomeAsset</title>
+        <Links />
+      </head>
+      <body style={{ margin: 0, background: "#fdfbf7", display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh", flexDirection: "column", gap: "16px", fontFamily: "Inter, sans-serif" }}>
+        <div style={{ width: 40, height: 40, borderRadius: "50%", border: "3px solid #f3f4f6", borderTopColor: "#f97316", animation: "spin 0.8s linear infinite" }} />
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </body>
+    </html>
+  );
+}
+
 export default function Root() {
   usePuterScript();
   const session = authClient.useSession();

@@ -119,17 +119,20 @@ declare const puter: {
       },
     ) => Promise<HTMLImageElement>;
   };
+  auth: {
+    isSignedIn: () => boolean;
+    signIn: () => Promise<void>;
+  };
 };
 
 const waitForPuter = (): Promise<void> =>
   new Promise((resolve, reject) => {
-    if (typeof puter !== "undefined" && puter?.ai?.txt2img) {
-      return resolve();
-    }
+    const check = () => typeof puter !== "undefined" && puter?.ai?.txt2img;
+    if (check()) return resolve();
     let attempts = 0;
     const interval = setInterval(() => {
       attempts++;
-      if (typeof puter !== "undefined" && puter?.ai?.txt2img) {
+      if (check()) {
         clearInterval(interval);
         resolve();
       } else if (attempts > 100) {
@@ -138,6 +141,15 @@ const waitForPuter = (): Promise<void> =>
       }
     }, 100);
   });
+
+const ensurePuterAuth = async (): Promise<void> => {
+  await waitForPuter();
+  if (!puter.auth.isSignedIn()) {
+    console.log("[Render] User not signed into Puter — opening sign-in...");
+    await puter.auth.signIn();
+    console.log("[Render] Puter sign-in complete.");
+  }
+};
 
 const imageElementToBase64 = (img: HTMLImageElement): Promise<string> =>
   new Promise((resolve, reject) => {
@@ -158,7 +170,7 @@ export const renderProject = async (
   try {
     console.log(`[Render] Starting 3D render for: ${name || "Untitled"}`);
 
-    await waitForPuter();
+    await ensurePuterAuth();
 
     const base64Data = image.includes(",") ? image.split(",")[1] : image;
     const mimeType: string = image.startsWith("data:image/png")

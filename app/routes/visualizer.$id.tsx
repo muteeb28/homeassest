@@ -35,6 +35,7 @@ export default function VisualizerRoute() {
     string | null
   >(null);
   const [isRendering, setIsRendering] = useState(false);
+  const isRenderingRef = useRef(false);
   const {
     userId: currentUserId,
     isSignedIn,
@@ -137,7 +138,8 @@ export default function VisualizerRoute() {
         setSelectedInitialRender(fetched.renderedImage || null);
 
         // Trigger rendering if there's no rendered image and it's a private project
-        if (!fetched.renderedImage && queryScope === "private" && fetched.sourceImage) {
+        if (!fetched.renderedImage && queryScope === "private" && fetched.sourceImage && !isRenderingRef.current) {
+          isRenderingRef.current = true;
           setIsRendering(true);
           const rendered = await renderProject(fetched.id, fetched.sourceImage, fetched.name || undefined);
           if (!cancelled && rendered) {
@@ -145,6 +147,7 @@ export default function VisualizerRoute() {
             setResolvedItem(prev => prev ? ({ ...prev, renderedImage: rendered }) : null);
           }
           setIsRendering(false);
+          isRenderingRef.current = false;
         }
       }
       setIsResolving(false);

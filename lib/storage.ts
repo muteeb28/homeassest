@@ -107,6 +107,9 @@ export const unshareProject = async (
   item: DesignHistoryItem,
 ): Promise<DesignHistoryItem | null> => saveProject(item, "private");
 
+const GEMINI_PROMPT =
+  "You are given a 2D architectural floor plan. Transform it into a photorealistic 3D bird's-eye view visualization that faithfully follows the exact room layout, walls, and dimensions shown in the floor plan. Show each room with realistic furniture, flooring textures, and warm interior lighting. Preserve the spatial arrangement from the 2D plan — do not invent rooms or rearrange the layout. Make it look like a professional architectural 3D rendering.";
+
 export const renderProject = async (
   id: string,
   image: string,
@@ -115,21 +118,48 @@ export const renderProject = async (
   try {
     console.log(`[Render] Starting 3D render for: ${name || "Untitled"}`);
 
-    const response = await fetch("/api/render", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ image, name }),
-    });
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY as string | undefined;
+    if (!apiKey) throw new Error("VITE_GEMINI_API_KEY is not set");
+
+    const base64Data = image.includes(",") ? image.split(",")[1] : image;
+    const mimeType = image.startsWith("data:image/png") ? "image/png" : "image/jpeg";
+
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-preview-image-generation:generateContent?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                { text: GEMINI_PROMPT },
+                { inlineData: { mimeType, data: base64Data } },
+              ],
+            },
+          ],
+          generationConfig: { responseModalities: ["TEXT", "IMAGE"] },
+        }),
+      },
+    );
 
     if (!response.ok) {
-      const err = await response.json().catch(() => ({}));
-      throw new Error(err.details || err.error || `HTTP ${response.status}`);
+      const errText = await response.text();
+      throw new Error(`Gemini API error ${response.status}: ${errText}`);
     }
 
     const data = await response.json();
-    const renderedImage: string = data.renderedImage;
+    const parts: any[] = data?.candidates?.[0]?.content?.parts ?? [];
 
-    if (!renderedImage) throw new Error("No rendered image returned");
+    let renderedImage: string | null = null;
+    for (const part of parts) {
+      if (part?.inlineData?.data) {
+        renderedImage = `data:${part.inlineData.mimeType ?? "image/png"};base64,${part.inlineData.data}`;
+        break;
+      }
+    }
+
+    if (!renderedImage) throw new Error("No image returned from Gemini");
 
     console.log("[Render] 3D render complete!");
 

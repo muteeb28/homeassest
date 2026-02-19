@@ -107,65 +107,6 @@ export const unshareProject = async (
   item: DesignHistoryItem,
 ): Promise<DesignHistoryItem | null> => saveProject(item, "private");
 
-// Declare puter global (loaded via script tag in root.tsx)
-declare const puter: {
-  ai: {
-    txt2img: (
-      prompt: string,
-      options?: {
-        model?: string;
-        input_image?: string;
-        input_image_mime_type?: string;
-      },
-    ) => Promise<HTMLImageElement>;
-  };
-  auth: {
-    isSignedIn: () => boolean;
-    signIn: () => Promise<void>;
-  };
-};
-
-const waitForPuter = (): Promise<void> =>
-  new Promise((resolve, reject) => {
-    const check = () => typeof puter !== "undefined" && puter?.ai?.txt2img;
-    if (check()) return resolve();
-    let attempts = 0;
-    const interval = setInterval(() => {
-      attempts++;
-      if (check()) {
-        clearInterval(interval);
-        resolve();
-      } else if (attempts > 100) {
-        clearInterval(interval);
-        reject(new Error("Puter.js SDK did not load within 10 seconds"));
-      }
-    }, 100);
-  });
-
-export const isPuterSignedIn = (): boolean => {
-  try {
-    return typeof puter !== "undefined" && puter.auth.isSignedIn();
-  } catch {
-    return false;
-  }
-};
-
-export const signInToPuter = async (): Promise<void> => {
-  await waitForPuter();
-  await puter.auth.signIn();
-};
-
-const imageElementToBase64 = (img: HTMLImageElement): Promise<string> =>
-  new Promise((resolve, reject) => {
-    const canvas = document.createElement("canvas");
-    canvas.width = img.naturalWidth || img.width;
-    canvas.height = img.naturalHeight || img.height;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return reject(new Error("Could not get canvas context"));
-    ctx.drawImage(img, 0, 0);
-    resolve(canvas.toDataURL("image/png"));
-  });
-
 export const renderProject = async (
   id: string,
   image: string,
@@ -174,32 +115,24 @@ export const renderProject = async (
   try {
     console.log(`[Render] Starting 3D render for: ${name || "Untitled"}`);
 
-    await waitForPuter();
-    if (!puter.auth.isSignedIn()) {
-      console.log("[Render] Not signed into Puter — sign-in required.");
-      return null;
+    const response = await fetch("/api/render", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ image, name }),
+    });
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.details || err.error || `HTTP ${response.status}`);
     }
 
-    const base64Data = image.includes(",") ? image.split(",")[1] : image;
-    const mimeType: string = image.startsWith("data:image/png")
-      ? "image/png"
-      : "image/jpeg";
+    const data = await response.json();
+    const renderedImage: string = data.renderedImage;
 
-    console.log("[Render] Calling puter.ai.txt2img with gemini-2.5-flash-image-preview...");
+    if (!renderedImage) throw new Error("No rendered image returned");
 
-    const resultImg = await puter.ai.txt2img(
-      "You are given a 2D architectural floor plan. Transform it into a photorealistic 3D bird's-eye view visualization that faithfully follows the exact room layout, walls, and dimensions shown in the floor plan. Show each room with realistic furniture, flooring textures, and warm interior lighting. Preserve the spatial arrangement from the 2D plan — do not invent rooms or rearrange the layout. Make it look like a professional architectural 3D rendering.",
-      {
-        model: "gemini-2.5-flash-image-preview",
-        input_image: base64Data,
-        input_image_mime_type: mimeType,
-      },
-    );
-
-    const renderedImage = await imageElementToBase64(resultImg);
     console.log("[Render] 3D render complete!");
 
-    // Update the project in IndexedDB
     const project = await getProjectById({ id });
     if (project) {
       await saveProject({ ...project, renderedImage });

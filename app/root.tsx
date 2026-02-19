@@ -1,20 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Links, Meta, Outlet, Scripts, ScrollRestoration } from "react-router";
 import "../index.css";
 import { authClient } from "../lib/auth-client";
 import SignInModal from "../components/SignInModal";
-
-// Inject Puter.js SDK dynamically so it actually executes
-function usePuterScript() {
-  useEffect(() => {
-    if (document.getElementById("puter-sdk")) return;
-    const script = document.createElement("script");
-    script.id = "puter-sdk";
-    script.src = "https://js.puter.com/v2/";
-    script.async = true;
-    document.head.appendChild(script);
-  }, []);
-}
 
 export function HydrateFallback() {
   return (
@@ -35,7 +23,6 @@ export function HydrateFallback() {
 }
 
 export default function Root() {
-  usePuterScript();
   const session = authClient.useSession();
   const [showSignIn, setShowSignIn] = useState(false);
   const signInResolveRef = useRef<((value: boolean) => void) | null>(null);

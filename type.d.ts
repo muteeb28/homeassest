@@ -60,8 +60,6 @@ export interface VisualizerProps {
   sharedBy?: string | null;
   canUnshare?: boolean;
   isRendering?: boolean;
-  needsPuterSignIn?: boolean;
-  onPuterSignIn?: () => Promise<void> | void;
 }
 
 export interface UploadProps {

@@ -14,11 +14,9 @@ import {
 
 import {
   getProjectById,
-  isPuterSignedIn,
   renderProject,
   saveProject,
   shareProject,
-  signInToPuter,
   unshareProject,
 } from "@/lib/storage";
 
@@ -37,7 +35,6 @@ export default function VisualizerRoute() {
     string | null
   >(null);
   const [isRendering, setIsRendering] = useState(false);
-  const [needsPuterSignIn, setNeedsPuterSignIn] = useState(false);
   const isRenderingRef = useRef(false);
   const {
     userId: currentUserId,
@@ -55,25 +52,6 @@ export default function VisualizerRoute() {
         : "public";
   const queryOwnerId = search.get("ownerId");
   const isPublicProject = queryScope === "public";
-
-  const handlePuterSignIn = async () => {
-    await signInToPuter();
-    setNeedsPuterSignIn(false);
-    if (!resolvedItem?.sourceImage || isRenderingRef.current) return;
-    isRenderingRef.current = true;
-    setIsRendering(true);
-    const rendered = await renderProject(
-      resolvedItem.id,
-      resolvedItem.sourceImage,
-      resolvedItem.name || undefined,
-    );
-    if (rendered) {
-      setSelectedInitialRender(rendered);
-      setResolvedItem((prev) => prev ? { ...prev, renderedImage: rendered } : null);
-    }
-    setIsRendering(false);
-    isRenderingRef.current = false;
-  };
 
   const fetchProjectById = async (
     projectId: string,
@@ -161,19 +139,15 @@ export default function VisualizerRoute() {
 
         // Trigger rendering if there's no rendered image and it's a private project
         if (!fetched.renderedImage && queryScope === "private" && fetched.sourceImage && !isRenderingRef.current) {
-          if (!isPuterSignedIn()) {
-            setNeedsPuterSignIn(true);
-          } else {
-            isRenderingRef.current = true;
-            setIsRendering(true);
-            const rendered = await renderProject(fetched.id, fetched.sourceImage, fetched.name || undefined);
-            if (!cancelled && rendered) {
-              setSelectedInitialRender(rendered);
-              setResolvedItem(prev => prev ? ({ ...prev, renderedImage: rendered }) : null);
-            }
-            setIsRendering(false);
-            isRenderingRef.current = false;
+          isRenderingRef.current = true;
+          setIsRendering(true);
+          const rendered = await renderProject(fetched.id, fetched.sourceImage, fetched.name || undefined);
+          if (!cancelled && rendered) {
+            setSelectedInitialRender(rendered);
+            setResolvedItem(prev => prev ? ({ ...prev, renderedImage: rendered }) : null);
           }
+          setIsRendering(false);
+          isRenderingRef.current = false;
         }
       }
       setIsResolving(false);
@@ -222,8 +196,6 @@ export default function VisualizerRoute() {
       sharedBy={resolvedItem?.sharedBy || null}
       canUnshare={canUnshare}
       isRendering={isRendering}
-      needsPuterSignIn={needsPuterSignIn}
-      onPuterSignIn={handlePuterSignIn}
     />
   );
 }

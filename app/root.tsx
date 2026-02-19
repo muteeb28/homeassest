@@ -28,6 +28,7 @@ export function HydrateFallback() {
       <body style={{ margin: 0, background: "#fdfbf7", display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh", flexDirection: "column", gap: "16px", fontFamily: "Inter, sans-serif" }}>
         <div style={{ width: 40, height: 40, borderRadius: "50%", border: "3px solid #f3f4f6", borderTopColor: "#f97316", animation: "spin 0.8s linear infinite" }} />
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+        <Scripts />
       </body>
     </html>
   );

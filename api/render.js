@@ -26,7 +26,7 @@ export default async function handler(req, res) {
 
   // Call HuggingFace Inference API - instruct-pix2pix for image-to-image transformation
   const hfResponse = await fetch(
-    "https://api-inference.huggingface.co/models/timbrooks/instruct-pix2pix",
+    "https://router.huggingface.co/hf-inference/models/timbrooks/instruct-pix2pix",
     {
       method: "POST",
       headers: {

@@ -1,5 +1,63 @@
-const PROMPT =
-  "Transform this 2D architectural floor plan into a photorealistic 3D bird's-eye view visualization. Show each room with realistic furniture, flooring textures, and warm interior lighting. Preserve the spatial arrangement from the 2D plan. Make it look like a professional architectural 3D rendering.";
+// Step 1: Use Gemini (free text tier) to describe the floor plan
+async function describeFloorPlan(base64Data, mimeType, geminiKey) {
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [
+              {
+                text: "Analyze this 2D architectural floor plan. Describe the rooms, their layout, sizes, and arrangement in 2-3 sentences. Focus on what rooms exist and how they connect. Be specific and concise.",
+              },
+              { inlineData: { mimeType, data: base64Data } },
+            ],
+          },
+        ],
+      }),
+    }
+  );
+
+  if (!response.ok) throw new Error("Gemini analysis failed");
+  const data = await response.json();
+  return data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+}
+
+// Step 2: Use FLUX (free) to generate a 3D visualization from the description
+async function generateWithFlux(floorPlanDescription, hfToken) {
+  const prompt = `Photorealistic 3D bird's-eye view architectural interior rendering. ${floorPlanDescription} Show each room with realistic furniture, hardwood and tile flooring, warm ambient lighting, plants, cushions, decorative items. Professional architectural visualization, ultra detailed, top-down perspective, 8k quality, no people.`;
+
+  const response = await fetch(
+    "https://router.huggingface.co/hf-inference/models/black-forest-labs/FLUX.1-schnell",
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${hfToken}`,
+        "Content-Type": "application/json",
+        "X-Wait-For-Model": "true",
+      },
+      body: JSON.stringify({
+        inputs: prompt,
+        parameters: {
+          num_inference_steps: 4,
+          guidance_scale: 0,
+          width: 1024,
+          height: 1024,
+        },
+      }),
+    }
+  );
+
+  if (!response.ok) {
+    const err = await response.text();
+    throw new Error(err);
+  }
+
+  const imageBuffer = await response.arrayBuffer();
+  return `data:image/jpeg;base64,${Buffer.from(imageBuffer).toString("base64")}`;
+}
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -7,7 +65,9 @@ export default async function handler(req, res) {
   }
 
   const hfToken = process.env.HF_TOKEN;
-  if (!hfToken) {
+  const geminiKey = process.env.GEMINI_API_KEY;
+
+  if (!hfToken || !geminiKey) {
     return res.status(500).json({ error: "Server not configured" });
   }
 
@@ -19,45 +79,22 @@ export default async function handler(req, res) {
   const base64Data = image.includes(",") ? image.split(",")[1] : image;
   const mimeType = image.startsWith("data:image/png") ? "image/png" : "image/jpeg";
 
-  console.log(`[Render] Starting 3D render for: ${name || "Untitled"}`);
+  console.log(`[Render] Starting for: ${name || "Untitled"}`);
 
-  // Convert base64 to binary buffer for HuggingFace
-  const imageBuffer = Buffer.from(base64Data, "base64");
+  try {
+    // Step 1: Describe the floor plan with Gemini (free text API)
+    console.log("[Render] Step 1: Analysing floor plan with Gemini...");
+    const description = await describeFloorPlan(base64Data, mimeType, geminiKey);
+    console.log("[Render] Floor plan description:", description);
 
-  // Call HuggingFace Inference API - instruct-pix2pix for image-to-image transformation
-  const hfResponse = await fetch(
-    "https://router.huggingface.co/hf-inference/models/timbrooks/instruct-pix2pix",
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${hfToken}`,
-        "Content-Type": "application/json",
-        "X-Wait-For-Model": "true",
-      },
-      body: JSON.stringify({
-        inputs: base64Data,
-        parameters: {
-          prompt: PROMPT,
-          negative_prompt: "blurry, low quality, 2D, flat, cartoon",
-          image_guidance_scale: 1.5,
-          guidance_scale: 7.5,
-          num_inference_steps: 20,
-        },
-      }),
-    }
-  );
+    // Step 2: Generate 3D visualization with FLUX
+    console.log("[Render] Step 2: Generating 3D render with FLUX...");
+    const renderedImage = await generateWithFlux(description, hfToken);
 
-  if (!hfResponse.ok) {
-    const errText = await hfResponse.text();
-    console.error("[Render] HuggingFace API error:", hfResponse.status, errText);
-    return res.status(hfResponse.status).json({ error: errText });
+    console.log("[Render] Complete!");
+    return res.status(200).json({ renderedImage });
+  } catch (error) {
+    console.error("[Render] Error:", error.message);
+    return res.status(500).json({ error: error.message });
   }
-
-  // HuggingFace returns binary image data
-  const imageArrayBuffer = await hfResponse.arrayBuffer();
-  const resultBase64 = Buffer.from(imageArrayBuffer).toString("base64");
-  const renderedImage = `data:image/jpeg;base64,${resultBase64}`;
-
-  console.log("[Render] 3D render complete!");
-  return res.status(200).json({ renderedImage });
 }

@@ -2,6 +2,11 @@
   "buildCommand": "npm run build",
   "outputDirectory": "build/client",
   "framework": null,
+  "functions": {
+    "api/render.js": {
+      "maxDuration": 60
+    }
+  },
   "rewrites": [
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ]

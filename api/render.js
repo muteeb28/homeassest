@@ -6,7 +6,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const apiKey = process.env.STITCH_API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     return res.status(500).json({ error: "Server not configured" });
   }
@@ -21,42 +21,45 @@ export default async function handler(req, res) {
 
   console.log(`[Render] Starting 3D render for: ${name || "Untitled"}`);
 
-  const puterResponse = await fetch("https://api.puter.com/drivers/call", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      interface: "puter-image-generation",
-      method: "generate",
-      args: {
-        prompt: PROMPT,
-        model: "gemini-2.5-flash-image-preview",
-        input_image: base64Data,
-        input_image_mime_type: mimeType,
-      },
-    }),
-  });
+  const geminiResponse = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [
+              { text: PROMPT },
+              { inlineData: { mimeType, data: base64Data } },
+            ],
+          },
+        ],
+        generationConfig: { responseModalities: ["TEXT", "IMAGE"] },
+      }),
+    }
+  );
 
-  if (!puterResponse.ok) {
-    const errText = await puterResponse.text();
-    console.error("[Render] Puter API error:", puterResponse.status, errText);
-    return res.status(puterResponse.status).json({ error: errText });
+  if (!geminiResponse.ok) {
+    const errText = await geminiResponse.text();
+    console.error("[Render] Gemini API error:", geminiResponse.status, errText);
+    return res.status(geminiResponse.status).json({ error: errText });
   }
 
-  const data = await puterResponse.json();
-  console.log("[Render] Puter API response:", JSON.stringify(data).slice(0, 200));
+  const data = await geminiResponse.json();
+  const parts = data?.candidates?.[0]?.content?.parts ?? [];
 
   let renderedImage = null;
-  if (data?.result?.image) renderedImage = data.result.image;
-  else if (data?.result?.url) renderedImage = data.result.url;
-  else if (data?.result?.data) renderedImage = `data:image/png;base64,${data.result.data}`;
-  else if (typeof data?.result === "string") renderedImage = data.result;
+  for (const part of parts) {
+    if (part?.inlineData?.data) {
+      renderedImage = `data:${part.inlineData.mimeType ?? "image/png"};base64,${part.inlineData.data}`;
+      break;
+    }
+  }
 
   if (!renderedImage) {
-    console.error("[Render] No image in response:", JSON.stringify(data));
-    return res.status(500).json({ error: "No image returned from Puter" });
+    console.error("[Render] No image in Gemini response:", JSON.stringify(data).slice(0, 500));
+    return res.status(500).json({ error: "No image returned from Gemini" });
   }
 
   console.log("[Render] 3D render complete!");

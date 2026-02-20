@@ -1,7 +1,7 @@
 const PROMPT =
   "You are given a 2D architectural floor plan. Transform it into a photorealistic 3D bird's-eye view visualization that faithfully follows the exact room layout, walls, and dimensions shown in the floor plan. Show each room with realistic furniture, flooring textures, and warm interior lighting. Preserve the spatial arrangement from the 2D plan — do not invent rooms or rearrange the layout. Make it look like a professional architectural 3D rendering.";
 
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
@@ -61,4 +61,4 @@ module.exports = async function handler(req, res) {
 
   console.log("[Render] 3D render complete!");
   return res.status(200).json({ renderedImage });
-};
+}

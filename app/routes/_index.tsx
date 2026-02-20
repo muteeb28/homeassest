@@ -179,48 +179,52 @@ export default function IndexRoute() {
 
       {/* ── Hero ── */}
       <section className="hero">
-        <div className="announce">
-          <div className="dot">
-            <div className="pulse"></div>
-          </div>
-          <span>End-to-end Interior Solutions</span>
-        </div>
+        {/* Video background */}
+        <video className="hero-video" autoPlay muted loop playsInline>
+          <source src="/hero.mp4" type="video/mp4" />
+        </video>
+        <div className="hero-overlay" />
 
-        <h1>Your dream home, designed and delivered — end to end</h1>
-
-        <p className="subtitle">
-          From floor plan to finished space, HomeAsset brings together expert
-          design, curated materials, and AI-powered visualisation so you can
-          see, refine, and build your perfect interior with confidence.
-        </p>
-
-        <div className="actions">
-          <a href="#upload" className="cta">
-            Get Free Estimate <ArrowRight className="icon" />
-          </a>
-          <Button variant="outline" size="lg" className="demo" onClick={() => document.querySelector(".gallery-section")?.scrollIntoView({ behavior: "smooth" })}>
-            Explore Designs
-          </Button>
-        </div>
-
-        <div id="upload" className="upload-shell">
-          <div
-            className="grid-overlay"
-            style={{
-              backgroundImage:
-                "linear-gradient(#3B82F6 1px, transparent 1px), linear-gradient(90deg, #3B82F6 1px, transparent 1px)",
-              backgroundSize: "60px 60px",
-            }}
-          ></div>
-          <div className="upload-card">
-            <div className="upload-head">
-              <div className="upload-icon">
-                <Layers className="icon" />
+        {/* Content */}
+        <div className="hero-content">
+          {/* Left: headline & CTAs */}
+          <div className="hero-left">
+            <div className="announce">
+              <div className="dot">
+                <div className="pulse"></div>
               </div>
-              <h3>Visualise your space in 3D</h3>
-              <p>Upload a floor plan and see your home come to life instantly</p>
+              <span>End-to-end Interior Solutions</span>
             </div>
-            <Upload onComplete={handleUploadComplete} />
+
+            <h1>Your dream home, designed and delivered — end to end</h1>
+
+            <p className="subtitle">
+              From floor plan to finished space — expert design, curated
+              materials, and AI-powered 3D visualisation.
+            </p>
+
+            <div className="actions">
+              <a href="#upload" className="cta">
+                Get Free Estimate <ArrowRight className="icon" />
+              </a>
+              <Button variant="outline" size="lg" className="demo" onClick={() => document.querySelector(".gallery-section")?.scrollIntoView({ behavior: "smooth" })}>
+                Explore Designs
+              </Button>
+            </div>
+          </div>
+
+          {/* Right: upload card */}
+          <div id="upload" className="hero-right">
+            <div className="upload-card">
+              <div className="upload-head">
+                <div className="upload-icon">
+                  <Layers className="icon" />
+                </div>
+                <h3>Visualise your space in 3D</h3>
+                <p>Upload a 2D floor plan and see your home come to life instantly</p>
+              </div>
+              <Upload onComplete={handleUploadComplete} />
+            </div>
           </div>
         </div>
       </section>

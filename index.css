@@ -485,57 +485,80 @@
     @apply min-h-screen bg-background relative overflow-x-hidden text-foreground;
 
     .hero {
-      @apply pt-32 pb-20 px-6 max-w-7xl mx-auto flex flex-col items-center text-center;
+      @apply relative min-h-screen flex items-center overflow-hidden;
 
-      .announce {
-        @apply mb-8 inline-flex items-center px-3 py-1 rounded-md bg-white border border-zinc-200 shadow-sm;
+      .hero-video {
+        @apply absolute inset-0 w-full h-full object-cover;
+        z-index: 0;
+      }
 
-        .dot {
-          @apply w-4 h-4 rounded bg-blue-100 flex items-center justify-center mr-2;
+      .hero-overlay {
+        @apply absolute inset-0;
+        background: linear-gradient(
+          to right,
+          rgba(0, 0, 0, 0.72) 0%,
+          rgba(0, 0, 0, 0.55) 55%,
+          rgba(0, 0, 0, 0.25) 100%
+        );
+        z-index: 1;
+      }
 
-          .pulse {
-            @apply w-2 h-2 rounded-full bg-blue-500 animate-pulse;
+      .hero-content {
+        @apply relative w-full max-w-7xl mx-auto px-6 flex flex-col lg:flex-row items-center gap-12 lg:gap-16;
+        z-index: 2;
+        padding-top: 6rem;
+        padding-bottom: 4rem;
+      }
+
+      .hero-left {
+        @apply flex-1 flex flex-col items-start text-left;
+
+        .announce {
+          @apply mb-6 inline-flex items-center px-3 py-1 rounded-md border border-white/20 bg-white/10 backdrop-blur-sm;
+
+          .dot {
+            @apply w-4 h-4 rounded bg-blue-400/30 flex items-center justify-center mr-2;
+
+            .pulse {
+              @apply w-2 h-2 rounded-full bg-blue-400 animate-pulse;
+            }
+          }
+
+          span {
+            @apply text-[10px] font-bold uppercase tracking-widest text-white/80;
           }
         }
 
-        span {
-          @apply text-[10px] font-bold uppercase tracking-widest text-zinc-600;
+        h1 {
+          @apply text-5xl md:text-7xl font-serif leading-[0.95] text-white mb-6 max-w-2xl;
         }
-      }
 
-      h1 {
-        @apply text-6xl md:text-8xl font-serif leading-[0.95] text-black mb-8 max-w-5xl mx-auto;
-      }
+        .subtitle {
+          @apply max-w-lg text-xs md:text-sm font-mono uppercase tracking-widest text-white/60 mb-8 leading-relaxed;
+        }
 
-      .subtitle {
-        @apply max-w-2xl mx-auto text-xs md:text-sm font-mono uppercase tracking-widest text-zinc-500 mb-10 leading-relaxed;
-      }
+        .actions {
+          @apply flex flex-col sm:flex-row gap-4;
 
-      .actions {
-        @apply flex flex-col sm:flex-row gap-4 justify-center mb-16;
+          .cta {
+            @apply inline-flex items-center justify-center rounded-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-transparent px-8 py-3 text-sm uppercase tracking-wide font-bold bg-primary text-white hover:bg-[#ea580c] shadow-md;
 
-        .cta {
-          @apply inline-flex items-center justify-center rounded-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-background px-8 py-3 text-sm uppercase tracking-wide font-bold bg-primary text-white hover:bg-[#ea580c] shadow-md;
+            .icon {
+              @apply ml-2 w-4 h-4;
+            }
+          }
 
-          .icon {
-            @apply ml-2 w-4 h-4;
+          .demo {
+            @apply px-8 bg-white/10 text-white border-white/30 rounded-md hover:bg-white/20 backdrop-blur-sm;
           }
         }
-
-        .demo {
-          @apply px-8 bg-white rounded-md hover:bg-zinc-50;
-        }
       }
 
-      .upload-shell {
-        @apply w-full max-w-5xl mx-auto relative rounded-3xl overflow-hidden bg-linear-to-b from-blue-100/50 to-white/50 border border-blue-100 p-6 md:p-12 shadow-sm min-h-100 flex items-center justify-center;
-
-        .grid-overlay {
-          @apply absolute inset-0 opacity-40 pointer-events-none;
-        }
+      .hero-right {
+        @apply w-full lg:w-[400px] flex-shrink-0;
 
         .upload-card {
-          @apply relative w-full max-w-xl bg-white rounded-2xl shadow-xl overflow-hidden border border-zinc-100 p-8 z-10 transition-transform hover:scale-[1.01] duration-500;
+          @apply w-full bg-white rounded-2xl shadow-2xl overflow-hidden border border-zinc-100 p-8;
 
           .upload-head {
             @apply text-center mb-6;

@@ -1,33 +1,31 @@
-// Step 1: Use Gemini (free text tier) to describe the floor plan
-async function describeFloorPlan(base64Data, mimeType, geminiKey) {
+// Step 1: Use HuggingFace image captioning to understand the floor plan
+async function describeFloorPlan(base64Data, hfToken) {
   const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`,
+    "https://router.huggingface.co/hf-inference/models/Salesforce/blip-image-captioning-large",
     {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [
-              {
-                text: "Analyze this 2D architectural floor plan. Describe the rooms, their layout, sizes, and arrangement in 2-3 sentences. Focus on what rooms exist and how they connect. Be specific and concise.",
-              },
-              { inlineData: { mimeType, data: base64Data } },
-            ],
-          },
-        ],
-      }),
+      headers: {
+        Authorization: `Bearer ${hfToken}`,
+        "Content-Type": "application/json",
+        "X-Wait-For-Model": "true",
+      },
+      body: JSON.stringify({ inputs: base64Data }),
     }
   );
 
-  if (!response.ok) throw new Error("Gemini analysis failed");
+  if (!response.ok) {
+    const err = await response.text();
+    throw new Error(`Captioning failed: ${err}`);
+  }
+
   const data = await response.json();
-  return data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+  // Response is [{ generated_text: "..." }]
+  return Array.isArray(data) ? data[0]?.generated_text ?? "" : data?.generated_text ?? "";
 }
 
-// Step 2: Use FLUX (free) to generate a 3D visualization from the description
-async function generateWithFlux(floorPlanDescription, hfToken) {
-  const prompt = `Photorealistic 3D bird's-eye view architectural interior rendering. ${floorPlanDescription} Show each room with realistic furniture, hardwood and tile flooring, warm ambient lighting, plants, cushions, decorative items. Professional architectural visualization, ultra detailed, top-down perspective, 8k quality, no people.`;
+// Step 2: Use FLUX to generate the 3D visualization
+async function generateWithFlux(description, hfToken) {
+  const prompt = `Photorealistic 3D bird's-eye view architectural interior rendering based on this layout: ${description}. Show each room with realistic modern furniture, hardwood flooring, warm ambient lighting, plants and decor. Ultra detailed professional architectural visualization, top-down perspective, 8k quality, no people, no text.`;
 
   const response = await fetch(
     "https://router.huggingface.co/hf-inference/models/black-forest-labs/FLUX.1-schnell",
@@ -52,7 +50,7 @@ async function generateWithFlux(floorPlanDescription, hfToken) {
 
   if (!response.ok) {
     const err = await response.text();
-    throw new Error(err);
+    throw new Error(`FLUX generation failed: ${err}`);
   }
 
   const imageBuffer = await response.arrayBuffer();
@@ -65,9 +63,7 @@ export default async function handler(req, res) {
   }
 
   const hfToken = process.env.HF_TOKEN;
-  const geminiKey = process.env.GEMINI_API_KEY;
-
-  if (!hfToken || !geminiKey) {
+  if (!hfToken) {
     return res.status(500).json({ error: "Server not configured" });
   }
 
@@ -77,17 +73,14 @@ export default async function handler(req, res) {
   }
 
   const base64Data = image.includes(",") ? image.split(",")[1] : image;
-  const mimeType = image.startsWith("data:image/png") ? "image/png" : "image/jpeg";
 
   console.log(`[Render] Starting for: ${name || "Untitled"}`);
 
   try {
-    // Step 1: Describe the floor plan with Gemini (free text API)
-    console.log("[Render] Step 1: Analysing floor plan with Gemini...");
-    const description = await describeFloorPlan(base64Data, mimeType, geminiKey);
-    console.log("[Render] Floor plan description:", description);
+    console.log("[Render] Step 1: Captioning floor plan...");
+    const description = await describeFloorPlan(base64Data, hfToken);
+    console.log("[Render] Caption:", description);
 
-    // Step 2: Generate 3D visualization with FLUX
     console.log("[Render] Step 2: Generating 3D render with FLUX...");
     const renderedImage = await generateWithFlux(description, hfToken);
 

@@ -486,6 +486,7 @@
 
     .hero {
       @apply relative min-h-screen flex items-center overflow-hidden;
+      background: #111 url("/hero-poster.jpg") center / cover no-repeat;
 
       .hero-video {
         @apply absolute inset-0 w-full h-full object-cover;

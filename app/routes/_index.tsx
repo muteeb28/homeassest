@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import type { AuthContext, DesignHistoryItem } from "../../type";
 import { useLocation, useNavigate, useOutletContext } from "react-router";
+import type { LinksFunction } from "react-router";
 import {
   ArrowRight, ArrowUpRight, Clock, Layers, Trash2,
   ChevronLeft, ChevronRight, ChevronDown,
@@ -18,6 +19,11 @@ import { deleteProject, getProjects, saveProject } from "@/lib/storage";
 import { GALLERY_CATEGORIES, slugify } from "@/lib/gallery";
 
 const PAGE_SIZE = 3;
+
+// Preload the hero poster so the hero paints immediately while the video streams in.
+export const links: LinksFunction = () => [
+  { rel: "preload", href: "/hero-poster.jpg", as: "image", fetchPriority: "high" },
+];
 
 const SOLUTIONS = [
   { icon: UtensilsCrossed, label: "Modular Kitchen" },
@@ -180,7 +186,15 @@ export default function IndexRoute() {
       {/* ── Hero ── */}
       <section className="hero">
         {/* Video background */}
-        <video className="hero-video" autoPlay muted loop playsInline>
+        <video
+          className="hero-video"
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="auto"
+          poster="/hero-poster.jpg"
+        >
           <source src="/hero.mp4" type="video/mp4" />
         </video>
         <div className="hero-overlay" />
